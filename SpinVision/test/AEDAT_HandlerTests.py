@@ -1,8 +1,8 @@
 import unittest
-import AEDAT_Handler as handler
+import SpinVision.AEDAT_Handler as handler
 import os
 
-class AEDAT_HandlerTests(unittest.TestCase):
+class AEDATHandlerTests(unittest.TestCase):
     __basePath__ = "/home/kavits/Project/DVS Recordings/Matlab Recordings/"
     def canDownsampleAEDAT(self):
         sourceFile = "testRecording"
