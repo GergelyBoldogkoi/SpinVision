@@ -1,6 +1,7 @@
 import unittest
 import pyNN.spiNNaker as p
 import SpinVision.neuralNet as n
+import matplotlib.pyplot as plt
 
 class neuralNetTests(unittest.TestCase):
     neuronType = p.IF_curr_exp
@@ -55,15 +56,17 @@ class neuralNetTests(unittest.TestCase):
         Network = n.NeuralNet()
         layerId = Network.addInputLayer(2, [[0, 1], [0, 3]])
 
-        assert 1 == layerId
+        assert 0 == layerId
         assert 1 == len(Network.layers)
         assert p.SpikeSourceArray == Network.layers[0].nType
         assert 2 == len(Network.layers[0].nParams.get('spike_times'))
 
     def test_canPlotSpikes(self):
         Network = n.NeuralNet()
-        Network.addInputLayer(2,[[0, 2], [1, 3], [0]])
+        pre = Network.addInputLayer(3,[[0, 2], [1, 3], [0]])
+        post = Network.addLayerBasicLayer(3)
+        Network.connect(pre, post, p.OneToOneConnector(weights=5, delays=1))
         Network.run(10)
-        Network.plotSpikes(1)
+        Network.plotSpikes(post, block=False)
 
 
