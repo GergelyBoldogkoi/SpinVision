@@ -10,7 +10,13 @@ class AEDAT_HandlerTests(unittest.TestCase):
 
         handler.downsampleMatlab(sourceFile, destFile,4)
 
-        file = open(self.__basePath__ + sourceFile + ".aedat", "r")
+        file = open(self.__basePath__ + destFile + ".aedat", "r")
 
         file.close()
         os.remove(self.__basePath__ + destFile + ".aedat")
+
+        file = open(self.__basePath__ + destFile + ".mat", "r")
+
+        file.close()
+        os.remove(self.__basePath__ + destFile + ".mat")
+
