@@ -28,6 +28,15 @@ class neuralNetTests(unittest.TestCase):
         assert p.IF_curr_exp == Network.layers[0].nType
         assert {} == Network.layers[0].nParams
 
+    def test_canAddInputLayer(self):
+        Network = n.NeuralNet()
+        layerId = Network.addInputLayer(2, [[0, 1], [0, 3]])
+
+        assert 0 == layerId
+        assert 1 == len(Network.layers)
+        assert p.SpikeSourceArray == Network.layers[0].nType
+        assert 2 == len(Network.layers[0].nParams.get('spike_times'))
+
 
     def test_canConnectLayers(self):
         Network = n.NeuralNet()
@@ -39,7 +48,7 @@ class neuralNetTests(unittest.TestCase):
         assert 0 == c1
         assert lID1 == Network.connections[c1].pre
         assert lID2 == Network.connections[c1].post
-        assert 'excitatory' == Network.connections[c1].target
+        assert 'excitatory' == Network.connections[c1].type
 
         lID1 = Network.addLayerBasicLayer(2)
         lID2 = Network.addLayerBasicLayer(2)
@@ -48,18 +57,19 @@ class neuralNetTests(unittest.TestCase):
         assert 1 == c2
         assert lID1 == Network.connections[c2].pre
         assert lID2 == Network.connections[c2].post
-        assert 'inhibitory' == Network.connections[c2].target
+        assert 'inhibitory' == Network.connections[c2].type
 
-
-
-    def test_canAddInputLayer(self):
+    def test_canConnectSTDP(self):
         Network = n.NeuralNet()
-        layerId = Network.addInputLayer(2, [[0, 1], [0, 3]])
+        lID1 = Network.addLayerBasicLayer(2)
+        lID2 = Network.addLayerBasicLayer(2)
 
-        assert 0 == layerId
-        assert 1 == len(Network.layers)
-        assert p.SpikeSourceArray == Network.layers[0].nType
-        assert 2 == len(Network.layers[0].nParams.get('spike_times'))
+        c = Network.connectWithSTDP(lID1, lID2)
+
+        assert 0 == c
+        assert lID1 == Network.connections[c].pre
+        assert lID2 == Network.connections[c].post
+        assert 'STDP' == Network.connections[c].type
 
     def test_canPlotSpikes(self):
         Network = n.NeuralNet()
