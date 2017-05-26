@@ -2,6 +2,7 @@ import pyNN.spiNNaker as p
 import matplotlib.pyplot as plt
 import pylab
 from collections import namedtuple
+import AEDAT_Handler as fileHandler
 
 Layer = namedtuple("Layer", "pop nType nParams")
 Connection = namedtuple("Connection", "proj pre post connectivity type")
@@ -14,6 +15,10 @@ class NeuralNet(object):
         self.layers = []  # This list should contain Layers, see namedTuple def
         self.connections = []  # This list should contain Connections, see namedtuple def
         self.runTime = None
+
+    # ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    #                           LAYER MANIPULATION
+    # ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     # Adds a default population of neurons to the network
     def addLayerBasicLayer(self, size):
@@ -32,9 +37,41 @@ class NeuralNet(object):
 
         return len(self.layers) - 1
 
+    # this function returns a list of spike timings read from a file
+    # def readSpikes(self, filepath):
+    #todo complete
+    #     #TODO watch out that time does not start from 0
+    #
+    #     data = fileHandler.read(filepath + ".aedat")
+    #     #
+    #     # X = data[0]
+    #     # Y = data[1]
+    #     # ONOFF = data[2]
+    #     # timeStamp = data[3]
+    #
+    #     structuredContainer = [[[[]] * len(data[2])] * len(data[1])] * len(data[0])
+    #
+    #
+    #     for ts in len(data[3]): #for every spike-time
+    #         x = data[0][ts]
+    #         y = data[1][ts]
+    #         sign = data[2][ts]
+    #         spikeTime = data[3][ts]
+    #         structuredContainer[x][y][sign].append(spikeTime)
+    #
+    #     data = [] # to save memory
+    #     print structuredContainer
+    #     #return flattened spike times
+    #     #return [spike_times for ]
+
+    # ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    #                           CONNECTION MANIPULATION
+    # ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     # Connects two layers of the network
-    def connect(self, preSynaptic, postSynaptic, connectivity=p.AllToAllConnector(weights=5, delays=1),
+    def connect(self, preSynaptic, postSynaptic,
+                connectivity=p.AllToAllConnector(weights=5, delays=1),
                 type='excitatory'):
+
         proj = p.Projection(self.layers[preSynaptic].pop, self.layers[postSynaptic].pop, connectivity, target=type)
         connection = Connection(proj, preSynaptic, postSynaptic, connectivity, type)
 
@@ -69,6 +106,9 @@ class NeuralNet(object):
 
         return len(self.connections) - 1
 
+    # ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    #                           OPERATION
+    # ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     # runs simulation
     def run(self, runTime, record=True, record_v=True):
         self.runTime = runTime
@@ -82,6 +122,9 @@ class NeuralNet(object):
 
         p.run(runTime)
 
+    # ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    #                           OUTPUT
+    # ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     # plots spikes of a layer
     def plotSpikes(self, layerId, marker='o', block=True):
         spikes = self.layers[layerId].pop.getSpikes(compatible_output=True)

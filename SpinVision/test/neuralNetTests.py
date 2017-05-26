@@ -79,4 +79,12 @@ class neuralNetTests(unittest.TestCase):
         Network.run(10)
         Network.plotSpikes(post, block=False)
 
+    # def test_canReadSpikes(self):
+    #todo complete
+    #     Network = n.NeuralNet()
+    #     Network.readSpikes("/home/kavits/Project/SpinVision/SpinVision/resources/"
+    #                        "DVS Recordings/test/downsampledTestRecording")
+    #     assert False
+
+
 
