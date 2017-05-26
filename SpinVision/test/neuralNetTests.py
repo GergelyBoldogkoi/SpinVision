@@ -2,6 +2,7 @@ import unittest
 import pyNN.spiNNaker as p
 import SpinVision.neuralNet as n
 import matplotlib.pyplot as plt
+import SpinVision.AEDAT_Handler as f
 
 class neuralNetTests(unittest.TestCase):
     neuronType = p.IF_curr_exp
@@ -79,12 +80,18 @@ class neuralNetTests(unittest.TestCase):
         Network.run(10)
         Network.plotSpikes(post, block=False)
 
-    # def test_canReadSpikes(self):
-    #todo complete
-    #     Network = n.NeuralNet()
-    #     Network.readSpikes("/home/kavits/Project/SpinVision/SpinVision/resources/"
-    #                        "DVS Recordings/test/downsampledTestRecording")
-    #     assert False
+    def test_canReadSpikes(self):
 
+        Network = n.NeuralNet()
 
+        fileName = "/home/kavits/Project/SpinVision/SpinVision/resources/" \
+                   "DVS Recordings/test/testTruncated"
+        spikeTimes = Network.readSpikes(fileName)
 
+        flattenedList = [timeStamp for neuron in spikeTimes for timeStamp in neuron]
+        nrSpikes = len(flattenedList)
+
+        nrSpikesInFile = len(f.extractData(f.readData(fileName))['ts'])
+
+        assert nrSpikesInFile == nrSpikes
+        assert 937 == len(spikeTimes)

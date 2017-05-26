@@ -36,6 +36,17 @@ class AEDATHandlerTests(unittest.TestCase):
         assert len(nicedata['X']) == len(nicedata['t'])
         assert len(nicedata['X']) == len(nicedata['ts'])
 
+        dic = {}
+        for i in range(1,3):
+            if (1,2,3) not in dic:
+                dic[(1,2,3)] = [i]
+            else:
+                dic[(1,2,3)].append(i)
+
+        print dic
+
+
+
     def test_canTruncate(self):
 
         fileName = "downsampledTestRecording"
@@ -51,4 +62,11 @@ class AEDATHandlerTests(unittest.TestCase):
         assert len(nicedata['X']) == len(nicedata['t'])
         assert len(nicedata['X']) == len(nicedata['ts'])
 
+        print max(nicedata['X'])
+        print max(nicedata['Y'])
+        print min(nicedata['X'])
+        print min(nicedata['Y'])
+
         os.remove(self.__basePath__ + destFile + ".aedat")
+
+

@@ -82,3 +82,17 @@ def truncate(sourcePath, from_us, to_us, destPath):
 
     file.save(data, destPath + ".aedat")
     return extractData(data)
+#
+# def append(source1, source2, dest):
+#     data1 = readData(source1)
+#     data2 = readData(source2)
+#
+#     aeFile = paer.aefile("")
+#
+#     data1.x += data2.x
+#     data1.y += data2.y
+#     data1.t += data2.t
+#     data1.ts += data2.ts
+#
+#     aeFile.save(data1, dest + ".aedat")
+#     return extractData(data1)

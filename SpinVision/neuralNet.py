@@ -2,7 +2,7 @@ import pyNN.spiNNaker as p
 import matplotlib.pyplot as plt
 import pylab
 from collections import namedtuple
-import AEDAT_Handler as fileHandler
+import AEDAT_Handler as f
 
 Layer = namedtuple("Layer", "pop nType nParams")
 Connection = namedtuple("Connection", "proj pre post connectivity type")
@@ -37,32 +37,31 @@ class NeuralNet(object):
 
         return len(self.layers) - 1
 
-    # this function returns a list of spike timings read from a file
-    # def readSpikes(self, filepath):
-    #todo complete
-    #     #TODO watch out that time does not start from 0
-    #
-    #     data = fileHandler.read(filepath + ".aedat")
-    #     #
-    #     # X = data[0]
-    #     # Y = data[1]
-    #     # ONOFF = data[2]
-    #     # timeStamp = data[3]
-    #
-    #     structuredContainer = [[[[]] * len(data[2])] * len(data[1])] * len(data[0])
-    #
-    #
-    #     for ts in len(data[3]): #for every spike-time
-    #         x = data[0][ts]
-    #         y = data[1][ts]
-    #         sign = data[2][ts]
-    #         spikeTime = data[3][ts]
-    #         structuredContainer[x][y][sign].append(spikeTime)
-    #
-    #     data = [] # to save memory
-    #     print structuredContainer
-    #     #return flattened spike times
-    #     #return [spike_times for ]
+    # this function returns a list of spike timings read from a file, converts to ms
+    # ASSUMES .AEDAT FILES TO BE ORDERED ACCORDING TO TIMESTAMPS!!!!!
+    def readSpikes(self, filepath):
+
+        #TODO watch out that time does not start from 0
+        #TODO modify such that spiketimes can be read from multiple files
+
+        data = f.extractData(f.readData(filepath))
+
+        organisedData = {}  # datastructure containing a list of spiketimes for each neuron
+                            # a new neuron is created for each x,y and ONOFF value
+        for i in range(len(data['ts'])):
+            neuronId = (data['X'][i], data['Y'][i], data['t'][i]) #x,y,ONOFF
+
+            if neuronId not in organisedData:
+                organisedData[neuronId] = [data['ts'][i]]
+            else:
+                organisedData[neuronId].append(data['ts'][i])
+
+        spikeTimes = []
+        for neuronSpikes in organisedData:
+            spikeTimes.append(organisedData[neuronSpikes])
+
+        return spikeTimes
+
 
     # ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     #                           CONNECTION MANIPULATION
