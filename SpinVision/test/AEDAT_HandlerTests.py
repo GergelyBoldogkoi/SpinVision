@@ -25,25 +25,30 @@ class AEDATHandlerTests(unittest.TestCase):
         # file.close()
         # os.remove(self.__basePath__ + destFile + ".mat")
 
-    def test_canRead(self):
+    def test_canReadData(self):
         filename = "downsampledTestRecording"
-        data = handler.read(self.__basePath__ + filename)
+        data = handler.readData(self.__basePath__ + filename)
+        nicedata = handler.extractData(data)
 
-        assert 4 == len(data.keys())
-        assert 31632 == len(data['X'])
-        assert len(data['X']) == len(data['Y'])
-        assert len(data['X']) == len(data['t'])
-        assert len(data['X']) == len(data['ts'])
+        assert 4 == len(nicedata.keys())
+        assert 31632 == len(nicedata['X'])
+        assert len(nicedata['X']) == len(nicedata['Y'])
+        assert len(nicedata['X']) == len(nicedata['t'])
+        assert len(nicedata['X']) == len(nicedata['ts'])
 
-    # def test_canTruncate(self):
-        #todo complete
-    #     fileName = "downsampledTestRecording"
-    #     destFile = "to_del_testTruncatedTestRec"
-    #     fromTime_ms = 116896935 / 1000
-    #     toTime_ms = 118825756 / 1000
-    #
-    #     data = handler.truncate(self.__basePath__ + fileName, fromTime_ms, toTime_ms, self.__basePath__ + destFile)
-    #
-    #     print len(data['ts'])
-    #
-    #     os.remove(self.__basePath__ + destFile + ".mat")
+    def test_canTruncate(self):
+
+        fileName = "downsampledTestRecording"
+        destFile = "to_del_testTruncatedTestRec"
+        fromTime_us = 116896935
+        toTime_us = 118825756
+
+        nicedata = handler.truncate(self.__basePath__ + fileName, fromTime_us, toTime_us, self.__basePath__ + destFile)
+
+        assert 4 == len(nicedata.keys())
+        assert 7494 == len(nicedata['X'])
+        assert len(nicedata['X']) == len(nicedata['Y'])
+        assert len(nicedata['X']) == len(nicedata['t'])
+        assert len(nicedata['X']) == len(nicedata['ts'])
+
+        os.remove(self.__basePath__ + destFile + ".aedat")

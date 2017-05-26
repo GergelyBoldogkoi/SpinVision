@@ -2,22 +2,32 @@ import paer
 import scipy.io
 
 
-# ----------------------------------------------------------------------------
-#           THE FOLLOWING FUNCTION HAS BEEN TAKEN FROM HANYI HUs FYP
-#               AND HAS BEEN MODIFIED
-# ----------------------------------------------------------------------------
+
 def read(filename):
     sourceFile = filename + ".aedat"
     aer = paer.aefile(sourceFile)
     data = paer.aedata(aer)
 
+    return {'data': data, 'aer': aer}
+
+def readData(filename):
+    sourceFile = filename + ".aedat"
+    aer = paer.aefile(sourceFile)
+    data = paer.aedata(aer)
+
+    return data
+
+
+def readFile(filename):
+    sourceFile = filename + ".aedat"
+    aer = paer.aefile(sourceFile)
+
+    return aer
+
+#returns paer.aerdata in a legible format
+def extractData(data):
     niceData = {'X': data.x, 'Y': data.y, 't': data.t, 'ts': data.ts}
     return niceData
-
-
-# ---------------------------------------------------------------------------
-# ---------------------------------------------------------------------------
-
 
 def downsample(sourceFile, destFile, scale):
     sourcePath = sourceFile + ".aedat"
@@ -32,34 +42,43 @@ def downsample(sourceFile, destFile, scale):
     # sampled.save_to_mat(destPath + '.mat') #This file can be read by the application to extract spiketimes!
 
 
-# def truncate(sourcePath, fromUs, toUs, destPath):
-#todo complete
-#     data = read(sourcePath)
-#
-#     print "Length of timestamps" + len(data[3])
-#     prevTs = 0
-#     includeFrom = len(data[3])  # ensure nothing gets included without going through loop
-#     stopAt = 0
-#     includeIsSet = False
-#     for i in range(len(data[3])):
-#         ts = data[3][i]
-#         if ts >= fromUs and prevTs <= fromUs:
-#             if not includeIsSet:
-#                 print "found start at " + str(ts)
-#                 includeFrom = i
-#                 includeIsSet = True
-#
-#         if ts > toUs and prevTs <= toUs:  # includes events at fromMs and toMs
-#             print "found end at " + str(ts)
-#             stopAt = i
-#             prevTs = i
-#             break
-#     if stopAt == 0:
-#         raise RuntimeError("Could not find where to stop")
-#     truncatedData = {'X': data[0][includeFrom:stopAt],
-#                      'Y': data[1][includeFrom:stopAt],
-#                      't': data[2][includeFrom:stopAt],
-#                      'ts': data[3][includeFrom:stopAt]}
-#
-#     scipy.io.savemat(destPath + ".mat", truncatedData)
-#     return truncatedData
+def truncate(sourcePath, from_us, to_us, destPath):
+    loaded = read(sourcePath)
+
+    data = loaded['data']
+    niceData = extractData(data)
+    file = loaded['aer']
+
+
+    prevTs = 0
+    includeFrom = len(niceData['ts'])  # ensure nothing gets included without going through loop
+    stopAt = 0
+    includeIsSet = False
+
+    for i in range(len(niceData['ts'])):
+        ts = niceData['ts'][i]
+
+        if ts >= from_us and prevTs <= from_us:
+            if not includeIsSet:
+                print "found start at " + str(ts)
+                includeFrom = i
+                includeIsSet = True
+
+        if ts > to_us and prevTs <= to_us:  # includes events at fromMs and toMs
+            print "found end at " + str(ts)
+            stopAt = i
+            break
+
+        prevTs = ts
+
+    if stopAt == 0:
+        raise RuntimeError("Could not find where to stop")
+
+    data.x = data.x[includeFrom : stopAt]
+    data.y = data.y[includeFrom : stopAt]
+    data.t = data.t[includeFrom : stopAt]
+    data.ts = data.ts[includeFrom : stopAt]
+
+
+    file.save(data, destPath + ".aedat")
+    return extractData(data)
