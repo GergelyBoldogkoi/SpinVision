@@ -2,7 +2,7 @@ import paer
 
 
 def downsampleMatlab(sourceFile, destFile, scale):
-    basePath = "/home/kavits/Project/DVS Recordings/Matlab Recordings/"
+    basePath = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/"
 
     sourcePath = basePath + sourceFile + ".aedat"
     lib = paer.aefile(sourcePath)
