@@ -1,5 +1,7 @@
 import paer
 import scipy.io
+from os import listdir
+import numpy as np
 
 
 
@@ -60,12 +62,10 @@ def truncate(sourcePath, from_us, to_us, destPath):
 
         if ts >= from_us and prevTs <= from_us:
             if not includeIsSet:
-                print "found start at " + str(ts)
                 includeFrom = i
                 includeIsSet = True
 
         if ts > to_us and prevTs <= to_us:  # includes events at fromMs and toMs
-            print "found end at " + str(ts)
             stopAt = i
             break
 
@@ -83,16 +83,32 @@ def truncate(sourcePath, from_us, to_us, destPath):
     file.save(data, destPath + ".aedat")
     return extractData(data)
 #
-# def append(source1, source2, dest):
-#     data1 = readData(source1)
-#     data2 = readData(source2)
-#
-#     aeFile = paer.aefile("")
-#
-#     data1.x += data2.x
-#     data1.y += data2.y
-#     data1.t += data2.t
-#     data1.ts += data2.ts
-#
-#     aeFile.save(data1, dest + ".aedat")
-#     return extractData(data1)
+def append(sourceDir, timeBetweenSamples_us, dest=None, save=False):
+    aeFile = paer.aefile("/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/test/justAfiletoMakePaerWork.aedat")
+    collectiveData = paer.aedata()
+
+    for dir in sourceDir:
+        for file in listdir(dir):
+
+            filePath = dir + "/" + file[0:len(file) - len(".aedat")]
+            data = readData(filePath)
+            collectiveData.x = np.array(collectiveData.x.tolist() + data.x.tolist())
+            collectiveData.y = np.array(collectiveData.y.tolist() + data.y.tolist())
+            collectiveData.t = np.array(collectiveData.t.tolist() + data.t.tolist())
+
+            indexOfLast = len(collectiveData.ts) - 1
+            if indexOfLast < 0:
+                collectiveData.ts = data.ts
+            else:
+                endOfPrev = collectiveData.ts[indexOfLast]
+                templist = [ts + endOfPrev + timeBetweenSamples_us for ts in data.ts]
+                collectiveData.ts = np.array(collectiveData.ts.tolist() + templist) #templist needed as numpy is just great!
+
+            assert len(collectiveData.ts) == indexOfLast + 1 + len(data.ts)
+
+    if save:
+        if dest == None:
+            raise AttributeError("Please specify a destination file")
+
+        aeFile.save(collectiveData, dest + ".aedat")
+    return extractData(collectiveData)

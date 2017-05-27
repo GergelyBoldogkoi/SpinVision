@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import pylab
 from collections import namedtuple
 import AEDAT_Handler as f
+from os import listdir
 
 Layer = namedtuple("Layer", "pop nType nParams")
 Connection = namedtuple("Connection", "proj pre post connectivity type")
@@ -36,32 +37,6 @@ class NeuralNet(object):
         self.layers.append(layer)
 
         return len(self.layers) - 1
-
-    # this function returns a list of spike timings read from a file, converts to ms
-    # ASSUMES .AEDAT FILES TO BE ORDERED ACCORDING TO TIMESTAMPS!!!!!
-    def readSpikes(self, filepath):
-
-        #TODO watch out that time does not start from 0
-        #TODO modify such that spiketimes can be read from multiple files
-
-        data = f.extractData(f.readData(filepath))
-
-        organisedData = {}  # datastructure containing a list of spiketimes for each neuron
-                            # a new neuron is created for each x,y and ONOFF value
-        for i in range(len(data['ts'])):
-            neuronId = (data['X'][i], data['Y'][i], data['t'][i]) #x,y,ONOFF
-
-            if neuronId not in organisedData:
-                organisedData[neuronId] = [data['ts'][i]]
-            else:
-                organisedData[neuronId].append(data['ts'][i])
-
-        spikeTimes = []
-        for neuronSpikes in organisedData:
-            spikeTimes.append(organisedData[neuronSpikes])
-
-        return spikeTimes
-
 
     # ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     #                           CONNECTION MANIPULATION
@@ -120,6 +95,71 @@ class NeuralNet(object):
                     layer.pop.record_v()
 
         p.run(runTime)
+
+    # ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    #                           TRAINING
+    # ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    # this function returns a list of spike timings read from a file
+    # ASSUMES .AEDAT FILES TO BE ORDERED ACCORDING TO TIMESTAMPS!!!!!
+
+    def readSpikes(self, filepath, startFrom_ms=None, convertTo_ms=True):
+
+        data = f.extractData(f.readData(filepath))
+
+        organisedData = {}  # datastructure containing a structure of spiketimes for each neuron
+        # a new neuron is created for each x,y and ONOFF value
+        shift = 0  # is in us
+        startsAt = data['ts'][0]
+        spikeTime = 0
+
+        # find out how much to shift by such that the first spike is at starFrom_ms
+        if startFrom_ms is not None:
+            shift = startsAt - startFrom_ms * 1000  # assumes data is ordered according to spiketimes
+            startsAt = startsAt - shift
+            if convertTo_ms:
+                startsAt /= 1000
+        for i in range(len(data['ts'])):
+            neuronId = (data['X'][i], data['Y'][i], data['t'][i])  # x,y,ONOFF
+
+            spikeTime = data['ts'][i] - shift
+
+            if convertTo_ms:
+                spikeTime /= 1000
+
+
+            if neuronId not in organisedData:
+
+                organisedData[neuronId] = [spikeTime]
+
+            else:
+                organisedData[neuronId].append(spikeTime)
+
+        endsAt = spikeTime
+        return {'data': organisedData, 'timeSpan': abs(endsAt - startsAt)}
+
+    # This function reads in spikes from all files in given directories
+    def getTrainingData(self, trainingDirectories, timeBetweenSamples=0, startFrom_ms=0):
+        collectiveData = {}
+        startAt = startFrom_ms
+        for dir in trainingDirectories:
+            for file in listdir(dir):  # append spikes from new file to existing
+                filePath = dir + "/" + file[0:len(file) - len(".aedat")]  # get rid of ".aedat"
+                spikeCont = self.readSpikes(filePath, startFrom_ms=startAt)
+
+                startAt += spikeCont['timeSpan'] + timeBetweenSamples  # prepare to append data from next file
+
+                data = spikeCont['data']
+
+                collectiveData = {neuron: collectiveData.get(neuron, []) + data.get(neuron, []) for neuron in
+                                  set(collectiveData) | set(data)}
+
+        spikeTimes = []
+        for neuronSpikes in collectiveData.values():
+            neuronSpikes.sort()
+            spikeTimes.append(neuronSpikes)
+
+        return spikeTimes
 
     # ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     #                           OUTPUT

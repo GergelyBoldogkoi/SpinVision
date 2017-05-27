@@ -69,4 +69,15 @@ class AEDATHandlerTests(unittest.TestCase):
 
         os.remove(self.__basePath__ + destFile + ".aedat")
 
+    def test_canAppend(self):
+        sourceDir = self.__basePath__
+        destFile = "/to_del_testAppended"
+
+        data = handler.append([sourceDir + "/appendTest"], 1000000, sourceDir + destFile, True)
+        file = open(self.__basePath__ + destFile + ".aedat", "r")
+
+        file.close()
+
+        os.remove(sourceDir + "/to_del_testAppended.aedat")
+
 
