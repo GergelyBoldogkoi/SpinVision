@@ -87,20 +87,21 @@ class neuralNetTests(unittest.TestCase):
     def test_canReadSpikes(self):
         Network = n.NeuralNet()
 
-        fileName = "/home/kavits/Project/SpinVision/SpinVision/resources/" \
+        filename = "/home/kavits/Project/SpinVision/SpinVision/resources/" \
                    "DVS Recordings/test/testTruncated"
-        spikeTimes = Network.readSpikes(fileName)['data']
+        aedata = f.readData(filename)
+        spikeTimes = Network.readSpikes(aedata)
 
         flattenedList = [timeStamp for neuron in spikeTimes.values() for timeStamp in neuron]
         nrSpikes = len(flattenedList)
 
-        nrSpikesInFile = len(f.extractData(f.readData(fileName))['ts'])
+        nrSpikesInFile = len(f.extractData(f.readData(filename))['ts'])
 
         self.assertEquals(nrSpikesInFile, nrSpikes)
         self.assertEquals(937, len(spikeTimes))
 
         # converts to ms
-        spikeTimes2 = Network.readSpikes(fileName, convertTo_ms=False)['data']
+        spikeTimes2 = Network.readSpikes(aedata, convertTo_ms=False)
         flattenedList2 = [timeStamp for neuron in spikeTimes2.values() for timeStamp in neuron]
 
         flattenedList2.sort()
@@ -109,7 +110,7 @@ class neuralNetTests(unittest.TestCase):
 
 
         startTime = 1000
-        spikeTimes = Network.readSpikes(fileName,startTime)['data']
+        spikeTimes = Network.readSpikes(aedata,startTime)
         flattenedList = [timeStamp for neuron in spikeTimes.values() for timeStamp in neuron]
         flattenedList.sort()
         self.assertEquals(flattenedList[0], startTime, "check whether list actually starts from startTime")
@@ -134,7 +135,7 @@ class neuralNetTests(unittest.TestCase):
             nrSpikesControl += len(f.extractData(f.readData(path + "/" + file[0:len(file) - len(".aedat")]))['ts'])
 
         hab = f.readData(path + "/Sample3")
-        print "len hab : " + str((hab.ts[len(hab.ts) -1] - hab.ts[0]) /1000)
+
 
         self.assertEquals(nrSpikesControl, nrSpikes)
         #TODO check whether time between samples is held correctly!

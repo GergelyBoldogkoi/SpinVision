@@ -111,4 +111,4 @@ def append(sourceDir, timeBetweenSamples_us, dest=None, save=False):
             raise AttributeError("Please specify a destination file")
 
         aeFile.save(collectiveData, dest + ".aedat")
-    return extractData(collectiveData)
+    return collectiveData

@@ -103,9 +103,9 @@ class NeuralNet(object):
     # this function returns a list of spike timings read from a file
     # ASSUMES .AEDAT FILES TO BE ORDERED ACCORDING TO TIMESTAMPS!!!!!
 
-    def readSpikes(self, filepath, startFrom_ms=None, convertTo_ms=True):
+    def readSpikes(self, aedata, startFrom_ms=None, convertTo_ms=True):
 
-        data = f.extractData(f.readData(filepath))
+        data = f.extractData(aedata)
 
         organisedData = {}  # datastructure containing a structure of spiketimes for each neuron
         # a new neuron is created for each x,y and ONOFF value
@@ -136,26 +136,29 @@ class NeuralNet(object):
                 organisedData[neuronId].append(spikeTime)
 
         endsAt = spikeTime
-        return {'data': organisedData, 'timeSpan': abs(endsAt - startsAt)}
+        return organisedData
 
     # This function reads in spikes from all files in given directories
-    def getTrainingData(self, trainingDirectories, timeBetweenSamples=0, startFrom_ms=0):
-        collectiveData = {}
-        startAt = startFrom_ms
-        for dir in trainingDirectories:
-            for file in listdir(dir):  # append spikes from new file to existing
-                filePath = dir + "/" + file[0:len(file) - len(".aedat")]  # get rid of ".aedat"
-                spikeCont = self.readSpikes(filePath, startFrom_ms=startAt)
+    def getTrainingData(self, trainingDirectories, timeBetweenSamples=0, startFrom_ms=0, save=False, filename=None):
 
-                startAt += spikeCont['timeSpan'] + timeBetweenSamples  # prepare to append data from next file
+        aedata = f.append(trainingDirectories, timeBetweenSamples*1000, filename, save)
 
-                data = spikeCont['data']
-
-                collectiveData = {neuron: collectiveData.get(neuron, []) + data.get(neuron, []) for neuron in
-                                  set(collectiveData) | set(data)}
+        data = self.readSpikes(aedata, startFrom_ms)
+        # startAt = startFrom_ms
+        # for dir in trainingDirectories:
+        #     for file in listdir(dir):  # append spikes from new file to existing
+        #         filePath = dir + "/" + file[0:len(file) - len(".aedat")]  # get rid of ".aedat"
+        #         spikeCont = self.readSpikes(filePath, startFrom_ms=startAt)
+        #
+        #         startAt += spikeCont['timeSpan'] + timeBetweenSamples  # prepare to append data from next file
+        #
+        #         data = spikeCont['data']
+        #
+        #         collectiveData = {neuron: collectiveData.get(neuron, []) + data.get(neuron, []) for neuron in
+        #                           set(collectiveData) | set(data)}
 
         spikeTimes = []
-        for neuronSpikes in collectiveData.values():
+        for neuronSpikes in data.values():
             neuronSpikes.sort()
             spikeTimes.append(neuronSpikes)
 
