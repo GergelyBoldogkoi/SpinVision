@@ -11,8 +11,34 @@ Connection = namedtuple("Connection", "proj pre post connectivity type")
 
 # inputFormat: layerDescriptors = [[pop L1, Neuron Type L1, Neuron Params L1],[Pop L2,...]...]
 class NeuralNet(object):
+    __neuronParameters__ = {
+        'cm': 1.0,  # The capacitance of the LIF neuron in nano-Farads
+        'tau_m': 20.0,  # The time-constant of the RC circuit, in millisecon
+        'tau_refrac': 2.0,  # The refractory period, in milliseconds
+        'v_reset': -70.0,  # The voltage to set the neuron at immediately after a spike
+        'v_rest': -65,  # The ambient rest voltage of the neuron
+        'v_thresh': -50,  # The threshold voltage at which the neuron will spike
+        'tau_syn_E': 5.0,  # The excitatory input current decay time-constant
+        'tau_syn_I': 5.0,  # The inhibitory input current decay time-constant
+        'i_offset': 0.0  # A base input current to add each timestep
+    }
+    __neuronType__ = p.IF_curr_exp
+
+    __STDPParameters__ = {
+        'mean': 0.5,
+        'std': 0.15,
+        'delay': 1,
+        'weightRule': 'additive',
+        'tauPlus': 20,
+        'tauMinus': 20,
+        'wMax': 1,
+        'wMin': 0,
+        'aPlus': 0.5,
+        'aMinus': 0.5
+    }
+
     def __init__(self, timestep=1):
-        p.setup(timestep=1)
+        p.setup(timestep=timestep)
         self.layers = []  # This list should contain Layers, see namedTuple def
         self.connections = []  # This list should contain Connections, see namedtuple def
         self.runTime = None
@@ -29,7 +55,7 @@ class NeuralNet(object):
         self.layers.append(layer)
         return len(self.layers) - 1
 
-    #adds layer to network
+    # adds layer to network
     def addLayer(self, size, neuronType, neuronParams):
         pop = p.Population(size, neuronType, neuronParams)
         layer = Layer(pop, neuronType, neuronParams)
@@ -107,31 +133,56 @@ class NeuralNet(object):
 
         p.run(runTime)
 
-    # trains 2 layers
-    def setup2Layer(self, outpuLayerSize, trainingDir, timeBetweenSamples, STDP_Params, neuronParams, neuronType=p.IF_curr_exp, filterInputFiles=None, save=False,destPath=None):
+    # sets up 2 layers for training
+    # when this function save, it is not going to save the actual training data, but the one that has been
+    # iterated iterations times
+    def setup2Layers(self, outpuLayerSize, trainingDir, timeBetweenSamples, iterations=1,
+                     filterInputFiles=None, save=False, destPath=None):
 
         if (not len(self.layers) == 0) and (not len(self.connections) == 0):
             raise TypeError(
                 "Network has already been initialized, please ensure to call this function on an uninitialized network")
 
-        trainingSpikes = getTrainingData(trainingDir, filterInputFiles, timeBetweenSamples, 0, save, destPath)
+        bundle = getTrainingData(trainingDir, iterations=iterations, filter=filterInputFiles,
+                                 timeBetweenSamples=timeBetweenSamples,
+                                 startFrom_ms=0, save=save, destFile=destPath)
+        lastSpike = bundle['lastSpikeAt']
+        trainingSpikes = bundle['spikeTimes']
 
-        inputLayerNr = self.addInputLayer(len(trainingSpikes),trainingSpikes)
+        inputLayerNr = self.addInputLayer(len(trainingSpikes), trainingSpikes)
 
-        outputLayerNr = self.addLayer(outpuLayerSize, neuronType, neuronParams)
+        outputLayerNr = self.addLayer(outpuLayerSize, self.__neuronType__, self.__neuronParameters__)
 
+        STDP_Params = self.__STDPParameters__
         stdpNr = self.connectWithSTDP(inputLayerNr, outputLayerNr,
-                             STDP_Params['mean'], STDP_Params['std'], STDP_Params['delay'],
-                             STDP_Params['weightRule'], STDP_Params['tauPlus'],
-                             STDP_Params['tauMinus'], STDP_Params['wMax'],
-                             STDP_Params['wMin'], STDP_Params['aPlus'], STDP_Params['aMinus'])
+                                      STDP_Params['mean'], STDP_Params['std'], STDP_Params['delay'],
+                                      STDP_Params['weightRule'], STDP_Params['tauPlus'],
+                                      STDP_Params['tauMinus'], STDP_Params['wMax'],
+                                      STDP_Params['wMin'], STDP_Params['aPlus'], STDP_Params['aMinus'])
 
         inhibitoryNr = self.connect(outputLayerNr, outputLayerNr,
                                     connectivity=p.AllToAllConnector(weights=5, delays=STDP_Params['delay']),
                                     type='inhibitory')
 
         return {'inputLayer': inputLayerNr, 'outputLayer': outputLayerNr,
-                'inhibitoryConnection': inhibitoryNr, 'STDPConnection': stdpNr}
+                'inhibitoryConnection': inhibitoryNr, 'STDPConnection': stdpNr,
+                'lastSpikeAt': lastSpike}
+
+    # This function trains the network
+    def train(self, outputLayerSize, iterations, timeBetweenSamples, trainingDir, filterInputFiles=None, save=False,
+              destPath=None):
+
+        net = self.setup2Layers(outpuLayerSize=outputLayerSize, trainingDir=trainingDir,
+                                timeBetweenSamples=timeBetweenSamples, iterations=iterations,
+                                filterInputFiles=filterInputFiles, save=save, destPath=destPath)
+
+        runTime = int(net['lastSpikeAt'] + 10)
+        print str(runTime) + " this is the RunTime"
+        self.run(runTime, record=True)
+
+        outputPop = self.layers[net['outputLayer']].pop
+
+        return net['outputLayer']
 
     # ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     #                           OUTPUT
@@ -142,7 +193,7 @@ class NeuralNet(object):
 
         plt.plot(spikes[:, 1], spikes[:, 0], ls='', marker=marker, markersize=4, ms=1)
         plt.xlim((-1, self.runTime))
-        plt.ylim((-0.1, 5))
+        plt.ylim((-0.1, self.layers[layerId].pop.size))
         plt.xlabel('time (t)')
         plt.ylabel('neuron index')
         plt.show(block=block)
@@ -152,8 +203,6 @@ class NeuralNet(object):
         return self.connections[connection][0].getWeights()
 
 
-
-
 # ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #                           TRAINING
 # ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -161,54 +210,57 @@ class NeuralNet(object):
 # ASSUMES .AEDAT FILES TO BE ORDERED ACCORDING TO TIMESTAMPS!!!!!
 
 
-def readSpikes(aedata, startFrom_ms=None, convertTo_ms=True):
+def readSpikes(aedata, iterations=1, timeBetweenIterations=0, startFrom_ms=None):
     data = f.extractData(aedata)
+
+    # TODO could be made more efficient and much nicer
 
     organisedData = {}  # datastructure containing a structure of spiketimes for each neuron
     # a new neuron is created for each x,y and ONOFF value
-    shift = 0  # is in us
+    shift_us = 0  # is in us
     startsAt = data['ts'][0]
     spikeTime = 0
+    lastSpikeAt = 0
 
     # find out how much to shift by such that the first spike is at starFrom_ms
-    if startFrom_ms is not None:
-        shift = startsAt - startFrom_ms * 1000  # assumes data is ordered according to spiketimes
-        startsAt = startsAt - shift
-        if convertTo_ms:
-            startsAt /= 1000
-    for i in range(len(data['ts'])):
-        neuronId = (data['X'][i], data['Y'][i], data['t'][i])  # x,y,ONOFF
+    if startFrom_ms is None:
+        startFrom_ms = startsAt / 1000
 
-        spikeTime = data['ts'][i] - shift
+    shift_us = startsAt - startFrom_ms * 1000  # assumes data is ordered according to spiketimes
+    for it in range(iterations):
 
-        if convertTo_ms:
-            spikeTime /= 1000
+        for i in range(len(data['ts'])):
+            neuronId = (data['X'][i], data['Y'][i], data['t'][i])  # x,y,ONOFF
 
-        if neuronId not in organisedData:
+            spikeTime = data['ts'][i] - shift_us
 
-            organisedData[neuronId] = [spikeTime]
+            if neuronId not in organisedData:
+                organisedData[neuronId] = [spikeTime / 1000]
 
-        else:
-            organisedData[neuronId].append(spikeTime)
+            else:
+                organisedData[neuronId].append(spikeTime / 1000)
 
-    endsAt = spikeTime
-    return organisedData
+        shift_us -= spikeTime + timeBetweenIterations * 1000
+
+    return {'data': organisedData, 'lastSpikeAt': spikeTime / 1000}
 
 
 # This function reads in spikes from all files in given directories
-def getTrainingData(trainingDirectories, filter=None, timeBetweenSamples=0, startFrom_ms=0, save=False,
+def getTrainingData(trainingDirectories, filter=None, iterations=1, timeBetweenSamples=0, startFrom_ms=0, save=False,
                     destFile=None):
-    # type: ([str], str, int, int, bool, str) -> [[float]]
+    # type: ([str], str, int,  int, int, bool, str) -> [[float]]
 
     aedata = f.concatenate(trainingDirectories, timeBetweenSamples * 1000, filter, destFile, save)
 
-    data = readSpikes(aedata, startFrom_ms)
+    cont = readSpikes(aedata, iterations, timeBetweenSamples, startFrom_ms)
+    data = cont['data']
+    finishesAt = cont['lastSpikeAt']
     spikeTimes = []
     for neuronSpikes in data.values():
         neuronSpikes.sort()
         spikeTimes.append(neuronSpikes)
 
-    return spikeTimes
+    return {'spikeTimes': spikeTimes, 'lastSpikeAt': finishesAt}
 
 
 # ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -111,7 +111,9 @@ class neuralNetTests(unittest.TestCase):
         filename = "/home/kavits/Project/SpinVision/SpinVision/resources/" \
                    "DVS Recordings/test/testTruncated"
         aedata = f.readData(filename)
-        spikeTimes = Network.readSpikes(aedata)
+        ahham = n.readSpikes(aedata)
+        spikeTimes = ahham['data']
+        lastSpike = ahham['lastSpikeAt']
 
         flattenedList = [timeStamp for neuron in spikeTimes.values() for timeStamp in neuron]
         nrSpikes = len(flattenedList)
@@ -121,26 +123,38 @@ class neuralNetTests(unittest.TestCase):
         self.assertEquals(nrSpikesInFile, nrSpikes)
         self.assertEquals(937, len(spikeTimes))
 
-        # converts to ms
-        spikeTimes2 = Network.readSpikes(aedata, convertTo_ms=False)
-        flattenedList2 = [timeStamp for neuron in spikeTimes2.values() for timeStamp in neuron]
+        self.assertEquals(aedata.ts[len(aedata.ts) -1]/1000, lastSpike)
 
-        flattenedList2.sort()
-        flattenedList.sort()
-        self.assertEquals(flattenedList[0], flattenedList2[0] / 1000)
-
+        #check start time works
         startTime = 1000
-        spikeTimes = n.readSpikes(aedata, startTime)
+        hab = n.readSpikes(aedata, startFrom_ms=startTime)
+        spikeTimes = hab['data']
+        lastSpike = hab['lastSpikeAt']
         flattenedList = [timeStamp for neuron in spikeTimes.values() for timeStamp in neuron]
+
         flattenedList.sort()
         self.assertEquals(flattenedList[0], startTime, "check whether list actually starts from startTime")
+
+        #make sure iterations work
+        nrIterations = 2
+        tbI = 100
+        hab2 = n.readSpikes(aedata, iterations=nrIterations, timeBetweenIterations=tbI, startFrom_ms=startTime)
+        spikeTimes2 = hab2['data']
+        lastSpike2 = hab2['lastSpikeAt']
+        flattenedList2 = [timeStamp for neuron in spikeTimes2.values() for timeStamp in neuron]
+        flattenedList2.sort()
+
+        self.assertEquals(len(flattenedList2), len(flattenedList) * nrIterations
+                          , "Not all elements added to list with iteration")
+        self.assertEquals(lastSpike * nrIterations + tbI, lastSpike2
+                          , "LastSpikeAt not set correctly for list with iteration")
 
     def test_canGetTrainingData(self):
         Network = n.NeuralNet()
         path = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/test/appendTest"
 
         tbs = 1000
-        data = n.getTrainingData([path], filter="test", timeBetweenSamples=tbs, startFrom_ms=0)
+        data = n.getTrainingData([path], filter="test", timeBetweenSamples=tbs, startFrom_ms=0)['spikeTimes']
         flattenedList = [timeStamp for neuron in data for timeStamp in neuron]
         nrSpikes = len(flattenedList)
 
@@ -165,9 +179,23 @@ class neuralNetTests(unittest.TestCase):
         self.assertEquals(nrSource * nrDest, len(connections))
 
     def test_canSetup2Layers(self):
-        Network = n.NeuralNet()
+        #TODO finish up testing
+        Network = n.NeuralNet(timestep=0.001)
 
-        hab = Network.setup2Layer(40, [basePath + "appendTest"], 100, self.STDPParams,
-                            self.neuronParameters, filterInputFiles='test')
+        hab = Network.setup2Layers(40, [basePath + "appendTest"], 100,
+                                   iterations=2, filterInputFiles='test')
 
-
+    # def test_canTrain(self):
+    #     #TODO finish up train method -- runs 1 iteration finefails on more
+    #     basepath = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/TrainingSamples"
+    #     traininDirs = [basepath]
+    #     # net1 = n.NeuralNet(1)
+    #     # out1 = net1.train(40,1,10, traininDirs, filterInputFiles="concat15")
+    #     # net1.plotSpikes(out1)
+    #
+    #
+    #     net2 = n.NeuralNet(1)
+    #     out2 = net2.train(40,2,10, traininDirs, filterInputFiles="concat15")
+    #
+    #
+    #     net2.plotSpikes(out2)
