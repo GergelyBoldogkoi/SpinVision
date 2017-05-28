@@ -118,24 +118,21 @@ class neuralNetTests(unittest.TestCase):
 
     def test_canGetTrainingData(self):
         Network = n.NeuralNet()
-        path = "/home/kavits/Project/SpinVision/SpinVision/resources/" \
-               "DVS Recordings/TrainingSamples/Pos3To1_lowAngle_32x32"
+        path = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/test/appendTest"
 
         tbs = 1000
-        data = Network.getTrainingData([path], timeBetweenSamples=tbs, startFrom_ms=0)
+        data = Network.getTrainingData([path], filter="test", timeBetweenSamples=tbs, startFrom_ms=0)
         flattenedList = [timeStamp for neuron in data for timeStamp in neuron]
         nrSpikes = len(flattenedList)
 
         nrSpikesControl = 0
-        i = 0
         for file in listdir(path):
-            if i == 0:
-                firstLen = len(f.extractData(f.readData(path + "/" + file[0:len(file) - len(".aedat")]))['ts'])
-                i = 2
+            print file
+            if "notTobeIncludedInAppend.aedat" == file: #make sure filtering works
+                print "ignoring incorrect file"
+                continue
+
             nrSpikesControl += len(f.extractData(f.readData(path + "/" + file[0:len(file) - len(".aedat")]))['ts'])
-
-        hab = f.readData(path + "/Sample3")
-
 
         self.assertEquals(nrSpikesControl, nrSpikes)
         #TODO check whether time between samples is held correctly!

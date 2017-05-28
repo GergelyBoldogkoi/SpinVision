@@ -73,7 +73,7 @@ class AEDATHandlerTests(unittest.TestCase):
         sourceDir = self.__basePath__
         destFile = "/to_del_testAppended"
 
-        data = handler.append([sourceDir + "/appendTest"], 1000000, sourceDir + destFile, True)
+        data = handler.append([sourceDir + "/appendTest"], 1000000, filter=None , dest=sourceDir + destFile, save=True)
         file = open(self.__basePath__ + destFile + ".aedat", "r")
 
         file.close()

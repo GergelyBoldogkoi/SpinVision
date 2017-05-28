@@ -139,9 +139,9 @@ class NeuralNet(object):
         return organisedData
 
     # This function reads in spikes from all files in given directories
-    def getTrainingData(self, trainingDirectories, timeBetweenSamples=0, startFrom_ms=0, save=False, filename=None):
+    def getTrainingData(self, trainingDirectories, filter=None, timeBetweenSamples=0, startFrom_ms=0, save=False, filename=None):
 
-        aedata = f.append(trainingDirectories, timeBetweenSamples*1000, filename, save)
+        aedata = f.append(trainingDirectories, timeBetweenSamples*1000, filter, filename, save)
 
         data = self.readSpikes(aedata, startFrom_ms)
         # startAt = startFrom_ms
