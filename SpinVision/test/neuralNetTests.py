@@ -5,19 +5,7 @@ import matplotlib.pyplot as plt
 import SpinVision.AEDAT_Handler as f
 from os import listdir
 
-
-def test_canCreateNeuralNet():
-    Network = n.NeuralNet()
-
-
-def test_canAddBasicLayer():
-    Network = n.NeuralNet()
-    layerId = Network.addLayerBasicLayer(1024)
-
-    assert 0 == layerId
-    assert 1 == len(Network.layers)
-    assert p.IF_curr_exp == Network.layers[0].nType
-    assert {} == Network.layers[0].nParams
+basePath = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/test/"
 
 
 class neuralNetTests(unittest.TestCase):
@@ -33,6 +21,39 @@ class neuralNetTests(unittest.TestCase):
         'tau_syn_I': 5.0,  # The inhibitory input current decay time-constant
         'i_offset': 0.0  # A base input current to add each timestep
     }
+    STDPParams = {
+        'mean': 0.5,
+        'std': 0.15,
+        'delay': 1,
+        'weightRule': 'additive',
+        'tauPlus': 20,
+        'tauMinus': 20,
+        'wMax': 1,
+        'wMin': 0,
+        'aPlus': 0.5,
+        'aMinus': 0.5
+    }
+
+    def test_canCreateNeuralNet(self):
+        Network = n.NeuralNet()
+
+    def test_canAddBasicLayer(self):
+        Network = n.NeuralNet()
+        layerId = Network.addBasicLayer(1024)
+
+        assert 0 == layerId
+        assert 1 == len(Network.layers)
+        assert p.IF_curr_exp == Network.layers[0].nType
+        assert {} == Network.layers[0].nParams
+
+    def test_canAddLayer(self):
+        neuronType = p.IF_curr_dual_exp
+        Network = n.NeuralNet()
+        layerId = Network.addLayer(1024, neuronType, self.neuronParameters)
+
+        self.assertEquals(0, layerId)
+        self.assertTrue(Network.layers[0].nType is neuronType)
+        self.assertTrue(Network.layers[0].nParams is self.neuronParameters)
 
     def test_canAddInputLayer(self):
         Network = n.NeuralNet()
@@ -45,8 +66,8 @@ class neuralNetTests(unittest.TestCase):
 
     def test_canConnectLayers(self):
         Network = n.NeuralNet()
-        lID1 = Network.addLayerBasicLayer(2)
-        lID2 = Network.addLayerBasicLayer(2)
+        lID1 = Network.addBasicLayer(2)
+        lID2 = Network.addBasicLayer(2)
 
         c1 = Network.connect(lID1, lID2)
 
@@ -55,8 +76,8 @@ class neuralNetTests(unittest.TestCase):
         assert lID2 == Network.connections[c1].post
         assert 'excitatory' == Network.connections[c1].type
 
-        lID1 = Network.addLayerBasicLayer(2)
-        lID2 = Network.addLayerBasicLayer(2)
+        lID1 = Network.addBasicLayer(2)
+        lID2 = Network.addBasicLayer(2)
 
         c2 = Network.connect(lID1, lID2, p.OneToOneConnector(weights=5, delays=1), 'inhibitory')
         assert 1 == c2
@@ -66,8 +87,8 @@ class neuralNetTests(unittest.TestCase):
 
     def test_canConnectSTDP(self):
         Network = n.NeuralNet()
-        lID1 = Network.addLayerBasicLayer(2)
-        lID2 = Network.addLayerBasicLayer(2)
+        lID1 = Network.addBasicLayer(2)
+        lID2 = Network.addBasicLayer(2)
 
         c = Network.connectWithSTDP(lID1, lID2)
 
@@ -79,7 +100,7 @@ class neuralNetTests(unittest.TestCase):
     def test_canPlotSpikes(self):
         Network = n.NeuralNet()
         pre = Network.addInputLayer(3, [[0, 2], [1, 3], [0]])
-        post = Network.addLayerBasicLayer(3)
+        post = Network.addBasicLayer(3)
         Network.connect(pre, post, p.OneToOneConnector(weights=5, delays=1))
         Network.run(10)
         Network.plotSpikes(post, block=False)
@@ -108,13 +129,11 @@ class neuralNetTests(unittest.TestCase):
         flattenedList.sort()
         self.assertEquals(flattenedList[0], flattenedList2[0] / 1000)
 
-
         startTime = 1000
-        spikeTimes = n.readSpikes(aedata,startTime)
+        spikeTimes = n.readSpikes(aedata, startTime)
         flattenedList = [timeStamp for neuron in spikeTimes.values() for timeStamp in neuron]
         flattenedList.sort()
         self.assertEquals(flattenedList[0], startTime, "check whether list actually starts from startTime")
-
 
     def test_canGetTrainingData(self):
         Network = n.NeuralNet()
@@ -128,11 +147,27 @@ class neuralNetTests(unittest.TestCase):
         nrSpikesControl = 0
         for file in listdir(path):
             print file
-            if "notTobeIncludedInAppend.aedat" == file: #make sure filtering works
+            if "notTobeIncludedInAppend.aedat" == file:  # make sure filtering works
                 print "ignoring incorrect file"
                 continue
 
             nrSpikesControl += len(f.extractData(f.readData(path + "/" + file[0:len(file) - len(".aedat")]))['ts'])
 
         self.assertEquals(nrSpikesControl, nrSpikes)
-        #TODO check whether time between samples is held correctly!
+
+    def test_canCreateGaussianConnections(self):
+
+        mean = 0.5
+        nrSource = 100
+        nrDest = 100
+        connections = n.createGaussianConnections(nrSource, nrDest, mean, 0.15)
+
+        self.assertEquals(nrSource * nrDest, len(connections))
+
+    def test_canSetup2Layers(self):
+        Network = n.NeuralNet()
+
+        hab = Network.setup2Layer(40, [basePath + "appendTest"], 100, self.STDPParams,
+                            self.neuronParameters, filterInputFiles='test')
+
+

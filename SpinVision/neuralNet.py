@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import pylab
 from collections import namedtuple
 import AEDAT_Handler as f
-from os import listdir
+import random as r
 
 Layer = namedtuple("Layer", "pop nType nParams")
 Connection = namedtuple("Connection", "proj pre post connectivity type")
@@ -22,16 +22,23 @@ class NeuralNet(object):
     # ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     # Adds a default population of neurons to the network
-    def addLayerBasicLayer(self, size):
-        label = str(len(self.layers))
+    def addBasicLayer(self, size):
         pop = p.Population(size, p.IF_curr_exp, {})
         layer = Layer(pop, p.IF_curr_exp, {})
 
         self.layers.append(layer)
         return len(self.layers) - 1
 
+    #adds layer to network
+    def addLayer(self, size, neuronType, neuronParams):
+        pop = p.Population(size, neuronType, neuronParams)
+        layer = Layer(pop, neuronType, neuronParams)
+        self.layers.append(layer)
+
+        return len(self.layers) - 1
+
     # Adds a population with pre-determined spike-times to the Network
-    def addInputLayer(self, size, sources, type='excitatory'):
+    def addInputLayer(self, size, sources):
         pop = p.Population(size, p.SpikeSourceArray, {'spike_times': sources})
         layer = Layer(pop, p.SpikeSourceArray, {'spike_times': sources})
         self.layers.append(layer)
@@ -52,7 +59,7 @@ class NeuralNet(object):
         self.connections.append(connection)
         return len(self.connections) - 1
 
-    def connectWithSTDP(self, pre, post, connectivity=p.AllToAllConnector(weights=0.5, delays=1),
+    def connectWithSTDP(self, pre, post, initWeightMean=0.5, initWeightStd=0.15, delay=1,
                         weightMod='additive',
                         tauPlus=20, tauMinus=20,
                         wMax=1, wMin=0,
@@ -63,7 +70,7 @@ class NeuralNet(object):
         # -------- Setting Weight Rule ------------
         weightRule = None
         if weightMod == 'additive':
-            weightRule = p.AdditiveWeightDependence(w_max=wMax, w_min=wMin, A_plus=0.5, A_minus=aMinus)
+            weightRule = p.AdditiveWeightDependence(w_max=wMax, w_min=wMin, A_plus=aPlus, A_minus=aMinus)
         # TODO add multiplicative weightrule
         else:
             raise TypeError(str(weightMod) + " is not a known weight modification rule for STDP \n"
@@ -71,6 +78,10 @@ class NeuralNet(object):
         # ------------------------------------------
 
         STDP_Model = p.STDPMechanism(timing_dependence=timingRule, weight_dependence=weightRule)
+
+        connections = createGaussianConnections(self.layers[pre][0].size, self.layers[post][0].size,
+                                                initWeightMean, initWeightStd, delay)
+        connectivity = p.FromListConnector(connections)
 
         proj = p.Projection(self.layers[pre].pop, self.layers[post].pop, connectivity,
                             synapse_dynamics=p.SynapseDynamics(slow=STDP_Model))
@@ -96,7 +107,31 @@ class NeuralNet(object):
 
         p.run(runTime)
 
+    # trains 2 layers
+    def setup2Layer(self, outpuLayerSize, trainingDir, timeBetweenSamples, STDP_Params, neuronParams, neuronType=p.IF_curr_exp, filterInputFiles=None, save=False,destPath=None):
 
+        if (not len(self.layers) == 0) and (not len(self.connections) == 0):
+            raise TypeError(
+                "Network has already been initialized, please ensure to call this function on an uninitialized network")
+
+        trainingSpikes = getTrainingData(trainingDir, filterInputFiles, timeBetweenSamples, 0, save, destPath)
+
+        inputLayerNr = self.addInputLayer(len(trainingSpikes),trainingSpikes)
+
+        outputLayerNr = self.addLayer(outpuLayerSize, neuronType, neuronParams)
+
+        stdpNr = self.connectWithSTDP(inputLayerNr, outputLayerNr,
+                             STDP_Params['mean'], STDP_Params['std'], STDP_Params['delay'],
+                             STDP_Params['weightRule'], STDP_Params['tauPlus'],
+                             STDP_Params['tauMinus'], STDP_Params['wMax'],
+                             STDP_Params['wMin'], STDP_Params['aPlus'], STDP_Params['aMinus'])
+
+        inhibitoryNr = self.connect(outputLayerNr, outputLayerNr,
+                                    connectivity=p.AllToAllConnector(weights=5, delays=STDP_Params['delay']),
+                                    type='inhibitory')
+
+        return {'inputLayer': inputLayerNr, 'outputLayer': outputLayerNr,
+                'inhibitoryConnection': inhibitoryNr, 'STDPConnection': stdpNr}
 
     # ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     #                           OUTPUT
@@ -112,12 +147,18 @@ class NeuralNet(object):
         plt.ylabel('neuron index')
         plt.show(block=block)
 
-    # ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    #                           TRAINING
-    # ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    def getWeights(self, connection):
 
-    # this function returns a list of spike timings read from a file
-    # ASSUMES .AEDAT FILES TO BE ORDERED ACCORDING TO TIMESTAMPS!!!!!
+        return self.connections[connection][0].getWeights()
+
+
+
+
+# ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#                           TRAINING
+# ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+# this function returns a list of spike timings read from a file
+# ASSUMES .AEDAT FILES TO BE ORDERED ACCORDING TO TIMESTAMPS!!!!!
 
 
 def readSpikes(aedata, startFrom_ms=None, convertTo_ms=True):
@@ -153,9 +194,11 @@ def readSpikes(aedata, startFrom_ms=None, convertTo_ms=True):
     endsAt = spikeTime
     return organisedData
 
+
 # This function reads in spikes from all files in given directories
 def getTrainingData(trainingDirectories, filter=None, timeBetweenSamples=0, startFrom_ms=0, save=False,
                     destFile=None):
+    # type: ([str], str, int, int, bool, str) -> [[float]]
 
     aedata = f.concatenate(trainingDirectories, timeBetweenSamples * 1000, filter, destFile, save)
 
@@ -166,3 +209,21 @@ def getTrainingData(trainingDirectories, filter=None, timeBetweenSamples=0, star
         spikeTimes.append(neuronSpikes)
 
     return spikeTimes
+
+
+# ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#                           HELPER FUNCTIONS
+# ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+def createGaussianConnections(nrPreNeurons, nrPostNeurons, mean, stdev, delay=1):
+    nrConnections = nrPreNeurons * nrPostNeurons
+    connections = [0] * nrConnections
+
+    i = 0
+    for ns in range(nrPreNeurons):
+        for nd in range(nrPostNeurons):
+            weight = abs(r.gauss(mean, stdev))
+            connections[i] = (ns, nd, weight, delay)
+            i += 1
+
+    return connections
