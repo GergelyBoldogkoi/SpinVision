@@ -110,7 +110,7 @@ class neuralNetTests(unittest.TestCase):
 
 
         startTime = 1000
-        spikeTimes = Network.readSpikes(aedata,startTime)
+        spikeTimes = n.readSpikes(aedata,startTime)
         flattenedList = [timeStamp for neuron in spikeTimes.values() for timeStamp in neuron]
         flattenedList.sort()
         self.assertEquals(flattenedList[0], startTime, "check whether list actually starts from startTime")
@@ -121,7 +121,7 @@ class neuralNetTests(unittest.TestCase):
         path = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/test/appendTest"
 
         tbs = 1000
-        data = Network.getTrainingData([path], filter="test", timeBetweenSamples=tbs, startFrom_ms=0)
+        data = n.getTrainingData([path], filter="test", timeBetweenSamples=tbs, startFrom_ms=0)
         flattenedList = [timeStamp for neuron in data for timeStamp in neuron]
         nrSpikes = len(flattenedList)
 

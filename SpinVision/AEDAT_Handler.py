@@ -83,21 +83,22 @@ def truncate(sourcePath, from_us, to_us, destPath):
     file.save(data, destPath + ".aedat")
     return extractData(data)
 #
-def append(sourceDir,timeBetweenSamples_us, filter=None,  dest=None, save=False):
+def concatenate(sourceDir, timeBetweenSamples_us, filter=None, dest=None, save=False):
     aeFile = paer.aefile("/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/test/justAfiletoMakePaerWork.aedat")
     collectiveData = paer.aedata()
 
-    for dir in sourceDir:
-        for file in listdir(dir):
+    for folder in sourceDir:
+        for dataFile in listdir(folder):
             if filter is None \
                     or filter == "" \
-                    or filter in file:
-                collectiveData = merge(collectiveData, dir, file, timeBetweenSamples_us)
+                    or filter in dataFile:
+                print dataFile
+                collectiveData = merge(collectiveData, folder, dataFile, timeBetweenSamples_us)
             else:
-                print "Ignoring " + file + " for training"
+                print "Ignoring " + dataFile + " for training"
 
     if save:
-        if dest == None:
+        if dest is None:
             raise AttributeError("Please specify a destination file")
 
         aeFile.save(collectiveData, dest + ".aedat")
@@ -107,15 +108,17 @@ def append(sourceDir,timeBetweenSamples_us, filter=None,  dest=None, save=False)
 def merge(collectiveData, dir, file, timeBetweenSamples_us):
     filePath = dir + "/" + file[0:len(file) - len(".aedat")]
     data = readData(filePath)
+    firstTs = data.ts[0]
+
     collectiveData.x = np.array(collectiveData.x.tolist() + data.x.tolist())
     collectiveData.y = np.array(collectiveData.y.tolist() + data.y.tolist())
     collectiveData.t = np.array(collectiveData.t.tolist() + data.t.tolist())
     indexOfLast = len(collectiveData.ts) - 1
-    if indexOfLast < 0:
+    if indexOfLast <= 0:
         collectiveData.ts = data.ts
     else:
         endOfPrev = collectiveData.ts[indexOfLast]
-        templist = [ts + endOfPrev + timeBetweenSamples_us for ts in data.ts]
+        templist = [ts - firstTs + endOfPrev + timeBetweenSamples_us for ts in data.ts]
         collectiveData.ts = np.array(collectiveData.ts.tolist() + templist)  # templist needed as numpy is just great!
     assert len(collectiveData.ts) == indexOfLast + 1 + len(data.ts)
     return collectiveData
