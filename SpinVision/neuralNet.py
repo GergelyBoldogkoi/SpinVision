@@ -37,8 +37,8 @@ class NeuralNet(object):
         'aMinus': 0.5
     }
 
-    def __init__(self, timestep=1):
-        p.setup(timestep=timestep)
+    def __init__(self, timeStep=1):
+        p.setup(timestep=timeStep)
         self.layers = []  # This list should contain Layers, see namedTuple def
         self.connections = []  # This list should contain Connections, see namedtuple def
         self.runTime = None
@@ -143,9 +143,9 @@ class NeuralNet(object):
             raise TypeError(
                 "Network has already been initialized, please ensure to call this function on an uninitialized network")
 
-        bundle = getTrainingData(trainingDir, iterations=iterations, filter=filterInputFiles,
-                                 timeBetweenSamples=timeBetweenSamples,
-                                 startFrom_ms=0, save=save, destFile=destPath)
+        bundle = getTrainingDataFromDirectories(trainingDir, iterations=iterations, filter=filterInputFiles,
+                                                timeBetweenSamples=timeBetweenSamples,
+                                                startFrom_ms=0, save=save, destFile=destPath)
         lastSpike = bundle['lastSpikeAt']
         trainingSpikes = bundle['spikeTimes']
 
@@ -188,7 +188,7 @@ class NeuralNet(object):
     #                           OUTPUT
     # ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     # plots spikes of a layer
-    def plotSpikes(self, layerId, marker='o', block=True):
+    def plotSpikes(self, layerId, marker='|', block=True):
         spikes = self.layers[layerId].pop.getSpikes(compatible_output=True)
 
         plt.plot(spikes[:, 1], spikes[:, 0], ls='', marker=marker, markersize=4, ms=1)
@@ -196,6 +196,7 @@ class NeuralNet(object):
         plt.ylim((-0.1, self.layers[layerId].pop.size))
         plt.xlabel('time (t)')
         plt.ylabel('neuron index')
+        plt.grid()
         plt.show(block=block)
 
     def getWeights(self, connection):
@@ -204,55 +205,91 @@ class NeuralNet(object):
 
 
 # ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#                           TRAINING
+#                           Data Handling
 # ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 # this function returns a list of spike timings read from a file
 # ASSUMES .AEDAT FILES TO BE ORDERED ACCORDING TO TIMESTAMPS!!!!!
 
+#
+# def readSpikes(aedata, iterations=1, timeBetweenIterations=0, startFrom_ms=None):
+#     data = f.extractData(aedata)
+#
+#     # TODO could be made more efficient and much nicer
+#
+#     organisedData = {}  # datastructure containing a structure of spiketimes for each neuron
+#     # a new neuron is created for each x,y and ONOFF value
+#     shift_us = 0  # is in us
+#     startsAt = data['ts'][0]
+#     spikeTime = 0
+#     lastSpikeAt = 0
+#
+#     # find out how much to shift by such that the first spike is at starFrom_ms
+#     if startFrom_ms is None:
+#         startFrom_ms = startsAt / 1000
+#
+#     shift_us = startsAt - startFrom_ms * 1000  # assumes data is ordered according to spiketimes
+#     for it in range(iterations):
+#
+#         for i in range(len(data['ts'])):
+#             neuronId = (data['X'][i], data['Y'][i], data['t'][i])  # x,y,ONOFF
+#
+#             spikeTime = data['ts'][i] - shift_us
+#
+#             if neuronId not in organisedData:
+#                 organisedData[neuronId] = [int(spikeTime / 1000)]
+#
+#             else:
+#                 organisedData[neuronId].append(int(spikeTime / 1000))
+#
+#         shift_us -= spikeTime + timeBetweenIterations * 1000
+#
+#     return {'data': organisedData, 'lastSpikeAt': int(spikeTime / 1000)}
 
-def readSpikes(aedata, iterations=1, timeBetweenIterations=0, startFrom_ms=None):
-    data = f.extractData(aedata)
 
-    # TODO could be made more efficient and much nicer
-
+def readSpikes(aedata, iterations=1, timeBetweenIterations=0):
     organisedData = {}  # datastructure containing a structure of spiketimes for each neuron
     # a new neuron is created for each x,y and ONOFF value
-    shift_us = 0  # is in us
-    startsAt = data['ts'][0]
     spikeTime = 0
-    lastSpikeAt = 0
+    sampleTimes = []
+    sampleEnd = None
 
-    # find out how much to shift by such that the first spike is at starFrom_ms
-    if startFrom_ms is None:
-        startFrom_ms = startsAt / 1000
-
-    shift_us = startsAt - startFrom_ms * 1000  # assumes data is ordered according to spiketimes
     for it in range(iterations):
 
-        for i in range(len(data['ts'])):
-            neuronId = (data['X'][i], data['Y'][i], data['t'][i])  # x,y,ONOFF
+        for sample in aedata:
+            sampleStart = spikeTime / 1000  # time of first spike in sample
+            data = f.extractData(sample)
 
-            spikeTime = data['ts'][i] - shift_us
+            dataLength = data['ts'][len(data['ts']) - 1] - data['ts'][0]  # get lenght of recording in us
+            for i in range(len(data['ts'])):
+                neuronId = (data['X'][i], data['Y'][i], data['t'][i])  # x,y,ONOFF
 
-            if neuronId not in organisedData:
-                organisedData[neuronId] = [spikeTime / 1000]
+                if neuronId not in organisedData:
+                    organisedData[neuronId] = [spikeTime / 1000]
 
-            else:
-                organisedData[neuronId].append(spikeTime / 1000)
+                else:
+                    organisedData[neuronId].append(spikeTime / 1000)
 
-        shift_us -= spikeTime + timeBetweenIterations * 1000
+                if i + 1 < len(data['ts']):
+                    spikeTime += data['ts'][i + 1] - data['ts'][i]  # set time of next spike
 
-    return {'data': organisedData, 'lastSpikeAt': spikeTime / 1000}
+            sampleEnd = spikeTime / 1000
+
+            sampleTimes.append({'start': sampleStart, 'end': sampleEnd})
+
+            spikeTime += timeBetweenIterations * 1000  # leave timeBetweenSamples time between samples
+
+    return {'data': organisedData, 'sampleTimes': sampleTimes,  'lastSpikeAt': sampleEnd}
 
 
 # This function reads in spikes from all files in given directories
-def getTrainingData(trainingDirectories, filter=None, iterations=1, timeBetweenSamples=0, startFrom_ms=0, save=False,
-                    destFile=None):
+def getTrainingDataFromDirectories(trainingDirectories, filter=None, iterations=1, timeBetweenSamples=0, startFrom_ms=0,
+                                   save=False,
+                                   destFile=None):
     # type: ([str], str, int,  int, int, bool, str) -> [[float]]
 
     aedata = f.concatenate(trainingDirectories, timeBetweenSamples * 1000, filter, destFile, save)
 
-    cont = readSpikes(aedata, iterations, timeBetweenSamples, startFrom_ms)
+    cont = readSpikes([aedata], iterations, timeBetweenSamples)
     data = cont['data']
     finishesAt = cont['lastSpikeAt']
     spikeTimes = []
@@ -261,6 +298,40 @@ def getTrainingData(trainingDirectories, filter=None, iterations=1, timeBetweenS
         spikeTimes.append(neuronSpikes)
 
     return {'spikeTimes': spikeTimes, 'lastSpikeAt': finishesAt}
+
+
+def getTrainingData(sourceFile1, sourceFile2, iterations, timebetweenSamples):
+    aedata1 = f.readData(sourceFile1)
+    aedata2 = f.readData(sourceFile2)
+
+    ordering = orderRandomly(aedata1, aedata2, iterations)
+
+
+
+
+
+
+
+    # get spikes, and length, and time in betweenem
+    # win
+
+
+def orderRandomly(aedata1, aedata2, iterations):
+    # TODO extend to handle a list of inputs
+    # randomize order
+    ordering = [0] * 2 * iterations
+    counter1 = 0
+    counter2 = 0
+    for i in range(len(ordering)):
+        rd = r.random()
+        if (rd < 0.5 or counter2 >= iterations) and counter1 < iterations:
+            ordering[i] = aedata1
+            counter1 += 1
+
+        elif counter2 < iterations:
+            ordering[i] = aedata2
+            counter2 += 1
+    return ordering
 
 
 # ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
