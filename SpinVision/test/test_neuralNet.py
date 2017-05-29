@@ -104,6 +104,7 @@ class neuralNetTests(unittest.TestCase):
         post = Network.addBasicLayer(3)
         Network.connect(pre, post, p.OneToOneConnector(weights=5, delays=1))
         Network.run(10)
+        Network.sampleTimes=[{'start': 1, 'end': 2}]
         Network.plotSpikes(post, block=False)
 
     def test_canReadSpikes(self):
@@ -183,45 +184,70 @@ class neuralNetTests(unittest.TestCase):
         self.assertEquals(nrSource * nrDest, len(connections))
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    def test_canSetup2Layers(self):
-        #TODO finish up testing
+    def test_canGetTrainingData(self):
         Network = n.NeuralNet()
+        path = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/test/"
 
-        hab = Network.setup2Layers(40, [basePath + "appendTest"], 100,
-                                   iterations=2, filterInputFiles='test')
+        files = []
+        files.append(path + "testSampleLeft")
+        files.append(path + "testSampleRight")
 
-    def test_canTrain(self):
-        #TODO finish up train method -- runs 1 iteration finefails on more
-        basepath = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/TrainingSamples"
-        traininDirs = [basepath]
-        # net1 = n.NeuralNet(1)
-        # out1 = net1.train(40,1,10, traininDirs, filterInputFiles="concat15")
-        # net1.plotSpikes(out1)
+        returned  = n.getTrainingData(files[0], files[1], 2 ,100)
+        print returned['sampleTimes']
+        #The tests here would really be the same as for readSpikes
 
+    def test_canSetupForInitialTraining(self):
+        Network = n.NeuralNet()
+        path = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/test/"
 
-        net2 = n.NeuralNet(1)
-        out2 = net2.train(20,2,1000, traininDirs, filterInputFiles="concat15")
+        files = []
+        files.append(path + "testSampleLeft")
+        files.append(path + "testSampleRight")
 
+        hab = Network.setUpInitialTraining(40, files[0], files[1], 100,
+                                           iterations=2)
 
-        net2.plotSpikes(out2)
+    def test_canSetupEvaluation(self):
+        net = n.NeuralNet()
+        path = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/test/"
+
+        files = []
+        files.append(path + "testSampleLeft")
+        files.append(path + "testSampleRight")
+
+        weights = [[0.,1.,2.], [3.,4.,5.]]
+
+        data = net.setUpEvaluation(weights, files[0], files[1])
+
+        self.assertEquals(files[0], net.annotations[0], "annotations set in correct order")
+        self.assertEquals(files[1], net.annotations[1], "annotations set in correct order")
+
+        # net.run(1)
+        #
+        # conWeights = net.connections[0].proj.getWeights(format='array')
+        #
+        #
+        #
+        # self.assertEquals(conWeights, weights) #Todo weights work correctly, but different type numbers are returned, find a way to compare them
+
+    # def test_canTrain(self):
+    #
+    #     path = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/test/"
+    #
+    #     files = []
+    #     files.append(path + "testSampleLeft")
+    #     files.append(path + "testSampleRight")
+    #     # net1 = n.NeuralNet(1)
+    #     # out1 = net1.train(40,1,10, traininDirs, filterInputFiles="concat15")
+    #     # net1.plotSpikes(out1)
+    #
+    #
+    #     net2 = n.NeuralNet(1)
+    #     out2 = net2.train(20,1,1000, files[0], files[1], filterInputFiles="concat15")
+    #
+    #
+    #     net2.plotSpikes(out2['outPutLayer'])
+    #
+    #     print out2['trainedWeights']
+    #     print len(out2['trainedWeights'])
+
