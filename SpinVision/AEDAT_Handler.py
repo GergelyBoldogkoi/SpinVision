@@ -43,6 +43,25 @@ def downsample(sourceFile, destFile, scale):
     lib.save(sampled, destPath + '.aedat', 'aedat')  # This file will be viewable in jAER
     # sampled.save_to_mat(destPath + '.mat') #This file can be read by the application to extract spiketimes!
 
+def speedUp(factor, sourceFile, destPath):
+    if factor == 0:
+        raise ValueError("Cannot speed up by 0")
+
+    sourcePath = sourceFile + ".aedat"
+    lib = paer.aefile(sourcePath)
+    data = paer.aedata(lib)
+
+    timeStart = data.ts[0]
+
+    fasterData = paer.aedata()
+    fasterData.x = data.x
+    fasterData.y = data.y
+    fasterData.t = data.t
+
+    fasterData.ts = [timeStart + (timeStamp - timeStart)/factor for timeStamp in data.ts]
+    lib.save(fasterData, destPath + '.aedat', 'aedat')  # This file will be viewable in jAER
+
+    return fasterData
 
 def truncate(sourcePath, from_us, to_us, destPath):
     loaded = read(sourcePath)

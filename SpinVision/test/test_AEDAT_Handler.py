@@ -80,4 +80,13 @@ class AEDATHandlerTests(unittest.TestCase):
 
         os.remove(sourceDir + "/to_del_testAppended.aedat")
 
+    def test_canSpeedUp(self):
+
+        sourceFile =self.__basePath__ + "/downsampledTestRecording"
+        destFile = "/spedUp"
+        speedFactor = 10
+        handler.speedUp(speedFactor, sourceFile, self.__basePath__ + destFile)
+
+
+
 

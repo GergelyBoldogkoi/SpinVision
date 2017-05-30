@@ -21,3 +21,5 @@ traininDirs.append(basepath + "TrainingSamples/Pos3To1_lowAngle_32x32")
 traininDirs.append(basepath + "TrainingSamples/Pos3To5_lowAngle_32x32")
 destFile = basepath + "TrainingSamples/concat15"
 # handler.concatenate(traininDirs, 100000, filter="Sample", dest=destFile, save=False)
+handler.speedUp(10, traininDirs[0] + "/Sample1", traininDirs[0] + "/10xSample1")
+handler.speedUp(10, traininDirs[1] + "/Sample1", traininDirs[1] + "/10xSample1")
