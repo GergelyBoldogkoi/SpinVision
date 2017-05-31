@@ -1,31 +1,39 @@
 import neuralNet as n
 import AEDAT_Handler as f
 
-TIME_BETWEEN_ITERATIONS = 10
+TIME_BETWEEN_ITERATIONS = 100
 ITERATIONS = 5
-RUNTIME_CONSTANT = 5
-MAX_ITERATIONS_FOR_TRAINING_RUN = 10 #Todo tune this number
+RUNTIME_CONSTANT = 1
+MAX_ITERATIONS_FOR_TRAINING_RUN = 40 #Todo tune this number
 
 
 def train(inputSize, outputSize, iterations, source1, source2, save=False, destFile=None, plot=False):
-    netWorkData = trainFromFile(inputSize, outputSize, MAX_ITERATIONS_FOR_TRAINING_RUN
+    netWorkData = trainFromFile(inputSize, outputSize, 1
                             , TIME_BETWEEN_ITERATIONS, source1, source2)
     weights = netWorkData['trainedWeights']
-    iterations -= MAX_ITERATIONS_FOR_TRAINING_RUN
+    iterations -= 1
 
     plotSpikes = False
     print iterations
     while iterations > 0:
-        if iterations - MAX_ITERATIONS_FOR_TRAINING_RUN <= 0 \
-                and plot:
-            plotSpikes = True
+        currentIter = MAX_ITERATIONS_FOR_TRAINING_RUN
 
-        netWorkData = trainWithWeights(weights, MAX_ITERATIONS_FOR_TRAINING_RUN,
+        if iterations - currentIter <= 0:
+            currentIter = iterations
+            if plot:
+                plotSpikes = True
+
+        netWorkData = trainWithWeights(weights, currentIter,
                                        source1, source2, plotSpikes)
 
         weights = netWorkData['trainedWeights']
 
-        iterations -= MAX_ITERATIONS_FOR_TRAINING_RUN
+        iterations -= currentIter
+
+# def evaluate(weightSouceFile, source1, source2):
+#     weights = loadWeights(weightSouceFile)
+#     with n.NeuralNet() as net1:
+#         net1.setUpEvaluation()
 
 
 def trainFromFile(inputLayerSize, outputLayerSize, iterations, timeBetweenSamples, source1, source2, plot=False):
@@ -50,10 +58,10 @@ def trainFromFile(inputLayerSize, outputLayerSize, iterations, timeBetweenSample
 def trainWithWeights(weights, iterations, source1, source2, plot=False):
     out = None
     with n.NeuralNet() as net:
-        #print 'yoo'
+
         inputLayerSize = len(weights)
-        #print weights
         outPutLayerSize = len(weights[0])  # any element of weight is fine
+
         networkData = net.setUpForTraining(inputLayerSize, outPutLayerSize,
                                            source1=source1, source2=source2,
                                            timeBetweenSamples=TIME_BETWEEN_ITERATIONS, iterations=iterations,
@@ -62,7 +70,6 @@ def trainWithWeights(weights, iterations, source1, source2, plot=False):
         runTime = int(networkData['lastSpikeAt'] + 10) / RUNTIME_CONSTANT
 
         net.run(runTime, record=True)
-       # print 'raaaan'
 
         weights = net.connections[networkData['STDPConnection']].proj.getWeights(format="array")
         out = networkData['outputLayer']
@@ -70,7 +77,6 @@ def trainWithWeights(weights, iterations, source1, source2, plot=False):
         if plot:
             net.plotSpikes(out, block=True)
 
-        print "about to return"
 
     return {'outPutLayer': out,
             'trainedWeights': weights}

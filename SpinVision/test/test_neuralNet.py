@@ -140,20 +140,6 @@ class neuralNetTests(unittest.TestCase):
         self.assertEquals(flattenedList[0], startTime
                           , "check whether list actually starts from 0")
 
-        # make sure iterations and multiple samples work
-        nrIterations = 2
-        nrSamples = 2
-        tbI = 100
-        hab2 = n.readSpikes([aedata, aedata], iterations=nrIterations, timeBetweenIterations=tbI)
-        spikeTimes2 = hab2['data']
-        lastSpike2 = hab2['lastSpikeAt']
-        flattenedList2 = [timeStamp for neuron in spikeTimes2.values() for timeStamp in neuron]
-        flattenedList2.sort()
-
-        self.assertEquals(len(flattenedList2), len(flattenedList) * nrIterations * nrSamples
-                          , "Not all elements added to list with iteration")
-        self.assertEquals(lastSpike * nrIterations * nrSamples + tbI * (nrSamples * nrIterations - 1), lastSpike2
-                          , "LastSpikeAt not set correctly for list with iteration")
 
     def test_canGetTrainingDataFromDirectories(self):
         Network = n.NeuralNet()

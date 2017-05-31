@@ -57,11 +57,11 @@ class networkControlTests(unittest.TestCase):
         files.append(path + "10xtestSampleRight")
 
         weightPath = "/home/kavits/Project/SpinVision/SpinVision/resources/NetworkWeights/test/"
-        sourceFile =  weightPath + "fullNetworkWeights"
+        sourceFile = weightPath + "fullNetworkWeights"
 
         weights = control.loadWeights(sourceFile)
 
-        out = control.trainWithWeights(weights, 6, 10, files[0], files[1])
+        out = control.trainWithWeights(weights, 40, files[0], files[1], plot=True)
         trainedWeights = out['trainedWeights']
         unrolledWeights = [w for neuron in weights for w in neuron]
         flatTrainedWeights = [w for neuron in trainedWeights for w in neuron]

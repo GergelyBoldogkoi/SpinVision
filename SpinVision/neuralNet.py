@@ -181,10 +181,8 @@ class NeuralNet(object):
                 "Network has already been initialized, please ensure to call this function on an uninitialized network")
 
         bundle = getTrainingData(inputLayerSize, source1, source2, iterations, timeBetweenSamples)
-
         lastSpike = bundle['lastSpikeAt']
         trainingSpikes = bundle['spikeTimes']
-
 
 
         inputLayerNr = self.addInputLayer(inputLayerSize, trainingSpikes)
@@ -198,6 +196,7 @@ class NeuralNet(object):
                                       STDP_Params['tauMinus'], STDP_Params['wMax'],
                                       STDP_Params['wMin'], STDP_Params['aPlus'], STDP_Params['aMinus'],
                                       weights)
+
 
         inhibitoryNr = self.connect(outputLayerNr, outputLayerNr,
                                     connectivity=p.AllToAllConnector(weights=5, delays=STDP_Params['delay']),
@@ -283,40 +282,40 @@ class NeuralNet(object):
 # ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-def readSpikes(aedata, iterations=1, timeBetweenIterations=0, ONOFF=False):
+def readSpikes(aedata, timeBetweenIterations=0, ONOFF=False):
     organisedData = {}  # datastructure containing a structure of spiketimes for each neuron
     # a new neuron is created for each x,y and ONOFF value
     spikeTime = 0
     sampleTimes_ms = []
     sampleEnd = None
 
-    for it in range(iterations):
 
-        for sample in aedata:
 
-            sampleLength = (sample.ts[len(sample.ts) - 1] - sample.ts[0])/1000
-            data = f.extractData(sample)
+    for sample in aedata:
+        sampleLength = (sample.ts[len(sample.ts) - 1] - sample.ts[0])/1000
+        data = f.extractData(sample)
 
-            for i in range(len(data['ts'])):
-                if ONOFF:
-                    neuronId = (data['X'][i], data['Y'][i], data['t'][i])  # x,y,ONOFF
-                else:
-                    neuronId = (data['X'][i], data['Y'][i])
+        for i in range(len(data['ts'])):
+            if ONOFF:
+                neuronId = (data['X'][i], data['Y'][i], data['t'][i])  # x,y,ONOFF
+            else:
+                neuronId = (data['X'][i], data['Y'][i])
 
-                if neuronId not in organisedData:
-                    organisedData[neuronId] = [spikeTime / 1000]
+            if neuronId not in organisedData:
+                organisedData[neuronId] = [spikeTime / 1000]
 
-                else:
-                    organisedData[neuronId].append(spikeTime / 1000)
+            else:
+                organisedData[neuronId].append(spikeTime / 1000)
 
-                if i + 1 < len(data['ts']):
-                    spikeTime += data['ts'][i + 1] - data['ts'][i]  # set time of next spike
+            if i + 1 < len(data['ts']):
+                spikeTime += data['ts'][i + 1] - data['ts'][i]  # set time of next spike
 
-            sampleEnd = spikeTime / 1000
 
-            sampleTimes_ms.append(sampleLength + timeBetweenIterations)
+        sampleEnd = spikeTime / 1000
 
-            spikeTime += timeBetweenIterations * 1000  # leave timeBetweenSamples time between samples
+        sampleTimes_ms.append(sampleLength + timeBetweenIterations)
+
+        spikeTime += timeBetweenIterations * 1000  # leave timeBetweenSamples time between samples
 
     return {'data': organisedData, 'sampleTimes': sampleTimes_ms,  'lastSpikeAt': sampleEnd}
 
@@ -329,7 +328,7 @@ def getTrainingDataFromDirectories(trainingDirectories, filter=None, iterations=
 
     aedata = f.concatenate(trainingDirectories, timeBetweenSamples * 1000, filter, destFile, save)
 
-    cont = readSpikes([aedata], iterations, timeBetweenSamples)
+    cont = readSpikes([aedata],  timeBetweenIterations=timeBetweenSamples)
     data = cont['data']
     finishesAt = cont['lastSpikeAt']
     spikeTimes = []
@@ -347,9 +346,13 @@ def getTrainingData(inputlayerSize, sourceFile1, sourceFile2, iterations, timebe
     if randomise:
         ordering = orderRandomly(aedata1, aedata2, iterations)
     else:
-        ordering = [aedata1, aedata2]
+        ordering = []
+        for i in range(iterations):
+            ordering.append(aedata1)
+            ordering.append(aedata2)
 
-    cont = readSpikes(ordering,iterations,timebetweenSamples)
+
+    cont = readSpikes(ordering, timebetweenSamples)
     data = cont['data']
 
     spikeTimes = []
@@ -409,6 +412,7 @@ def createConnectionsFromWeights(weights, delay=1):
 def orderRandomly(aedata1, aedata2, iterations):
     # TODO extend to handle a list of inputs
     # randomize order
+    print "iterations for ordering: " + str(iterations)
     ordering = [0] * 2 * iterations
     counter1 = 0
     counter2 = 0
@@ -421,6 +425,8 @@ def orderRandomly(aedata1, aedata2, iterations):
         elif counter2 < iterations:
             ordering[i] = aedata2
             counter2 += 1
+
+    print len(ordering)
     return ordering
 
 # ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
