@@ -10,6 +10,9 @@ Connection = namedtuple("Connection", "proj pre post connectivity type")
 
 
 # inputFormat: layerDescriptors = [[pop L1, Neuron Type L1, Neuron Params L1],[Pop L2,...]...]
+
+
+
 class NeuralNet(object):
     __neuronParameters__ = {
         'cm': 1.0,  # The capacitance of the LIF neuron in nano-Farads
@@ -111,7 +114,7 @@ class NeuralNet(object):
                         weightMod='additive',
                         tauPlus=20, tauMinus=20,
                         wMax=1, wMin=0,
-                        aPlus=0.5, aMinus=0.5):
+                        aPlus=0.5, aMinus=0.5, weights=None):
         # Maybe extend to save parameters of STDP Connection
         timingRule = p.SpikePairRule(tau_plus=tauPlus, tau_minus=tauMinus)
 
@@ -127,8 +130,13 @@ class NeuralNet(object):
 
         STDP_Model = p.STDPMechanism(timing_dependence=timingRule, weight_dependence=weightRule)
 
-        connections = createGaussianConnections(self.layers[pre][0].size, self.layers[post][0].size,
+        #SET UP WEIGHTS OF TH ENETWORK
+        if weights is None: #if there are no weighs supplied create randomised weights
+            connections = createGaussianConnections(self.layers[pre][0].size, self.layers[post][0].size,
                                                 initWeightMean, initWeightStd, delay)
+        else:#if weights are supplied set up STDP with those
+            connections = createConnectionsFromWeights(weights)
+
         connectivity = p.FromListConnector(connections)
 
         proj = p.Projection(self.layers[pre].pop, self.layers[post].pop, connectivity,
@@ -164,19 +172,20 @@ class NeuralNet(object):
     # sets up 2 layers for training
     # when this function save, it is not going to save the actual training data, but the one that has been
     # iterated iterations times
-    def setUpInitialTraining(self, inputLayerSize, outpuLayerSize, source1, source2, timeBetweenSamples, iterations=1):
+    def setUpForTraining(self, inputLayerSize, outpuLayerSize, source1, source2, timeBetweenSamples, iterations=1, weights=None):
+
+
 
         if (not len(self.layers) == 0) and (not len(self.connections) == 0):
             raise TypeError(
                 "Network has already been initialized, please ensure to call this function on an uninitialized network")
 
         bundle = getTrainingData(inputLayerSize, source1, source2, iterations, timeBetweenSamples)
+
         lastSpike = bundle['lastSpikeAt']
         trainingSpikes = bundle['spikeTimes']
 
-        print "Number of active neurons: " + str(len(trainingSpikes))
 
-        self.sampleTimes = bundle['sampleTimes']
 
         inputLayerNr = self.addInputLayer(inputLayerSize, trainingSpikes)
 
@@ -187,7 +196,8 @@ class NeuralNet(object):
                                       STDP_Params['mean'], STDP_Params['std'], STDP_Params['delay'],
                                       STDP_Params['weightRule'], STDP_Params['tauPlus'],
                                       STDP_Params['tauMinus'], STDP_Params['wMax'],
-                                      STDP_Params['wMin'], STDP_Params['aPlus'], STDP_Params['aMinus'])
+                                      STDP_Params['wMin'], STDP_Params['aPlus'], STDP_Params['aMinus'],
+                                      weights)
 
         inhibitoryNr = self.connect(outputLayerNr, outputLayerNr,
                                     connectivity=p.AllToAllConnector(weights=5, delays=STDP_Params['delay']),
@@ -197,32 +207,6 @@ class NeuralNet(object):
         return {'inputLayer': inputLayerNr, 'outputLayer': outputLayerNr,
                 'inhibitoryConnection': inhibitoryNr, 'STDPConnection': stdpNr,
                 'lastSpikeAt': lastSpike}
-
-    def setUpTrainingWithWeights(self, weights, source1, source2, delay=1):
-        # len(weights[0]) returns how many output neurons there are,
-        # as all inputs are connected to all outputs, so it doesn't really matter
-        # precisely which element of weights we take
-        nrOut = len(weights[0])
-        nrIn = len(weights)
-
-        outputLayerNr = self.addLayer(nrOut, self.__neuronType__, self.__neuronParameters__)
-
-        bundle = getTrainingData(nrIn, source1, source2, 1, 100)
-        evalSpikes = bundle['spikeTimes']
-
-        lastSpike = bundle['lastSpikeAt']
-
-        inputLayerNr = self.addInputLayer(nrIn, evalSpikes)
-
-        neuronConnections = [0] * nrIn*nrOut
-        for i in range(nrIn):
-            for j in range(nrOut):
-                neuronConnections[i * nrOut + j] = (i, j, weights[i][j], delay)
-
-        connection = self.connect(inputLayerNr, outputLayerNr, p.FromListConnector(neuronConnections), type='excitatory')
-
-        return {'inputLayer': inputLayerNr, 'outputLayer': outputLayerNr,
-                'connection': connection, 'runTime': lastSpike}
 
 
     def setUpEvaluation(self, weights, source1, source2, delay=1):
@@ -409,6 +393,18 @@ def createGaussianConnections(nrPreNeurons, nrPostNeurons, mean, stdev, delay=1)
             i += 1
 
     return connections
+def createConnectionsFromWeights(weights, delay=1):
+    nrConnections = len(weights) * len(weights[0])  #since all neurons have the same number of connections,
+                                                    # it doesnt really matter which element we take
+    connections = [0] * nrConnections
+    i = 0
+    for ns in range(len(weights)): #for every source neuron
+        for nd in range(len(weights[0])): #for every dest neuron
+            weight = weights[ns][nd]
+            connections[i] = (ns, nd, weight, delay)
+            i += 1
+    return connections
+
 
 def orderRandomly(aedata1, aedata2, iterations):
     # TODO extend to handle a list of inputs

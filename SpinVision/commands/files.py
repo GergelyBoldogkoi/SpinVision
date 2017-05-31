@@ -17,9 +17,11 @@ def truncateRecording(source, start,end, dest):
 # truncateRecording(basepath + "Pos3To5_lowAngle_32x32", 389753227, 391839810, basepath + "/TrainingSamples/Pos3To5_lowAngle_32x32/Sample3")
 
 traininDirs = []
-traininDirs.append(basepath + "TrainingSamples/Pos3To1_lowAngle_32x32")
-traininDirs.append(basepath + "TrainingSamples/Pos3To5_lowAngle_32x32")
-destFile = basepath + "TrainingSamples/concat15"
+traininDirs.append(basepath + "Pos3To1_lowAngle")
+traininDirs.append(basepath + "Pos3To5_lowAngle")
+destFile = basepath + "Pos3To5_lowAngle_16x16"
+
+handler.downsample(traininDirs[1], destFile, 8)
 # handler.concatenate(traininDirs, 100000, filter="Sample", dest=destFile, save=False)
-handler.speedUp(10, traininDirs[0] + "/Sample1", traininDirs[0] + "/10xSample1")
-handler.speedUp(10, traininDirs[1] + "/Sample1", traininDirs[1] + "/10xSample1")
+# handler.speedUp(10, traininDirs[0] + "/Sample1", traininDirs[0] + "/10xSample1")
+# handler.speedUp(10, traininDirs[1] + "/Sample1", traininDirs[1] + "/10xSample1")

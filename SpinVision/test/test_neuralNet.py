@@ -185,6 +185,23 @@ class neuralNetTests(unittest.TestCase):
 
         self.assertEquals(nrSource * nrDest, len(connections))
 
+    def test_canCreateConnectionsFromWeights(self):
+        weights = [[0,2,3],[5,6,7]]
+
+        connections = n.createConnectionsFromWeights(weights)
+
+        unrolledConn = [w for neuron in weights for w in neuron]
+        self.assertEquals(len(unrolledConn), len(connections))
+
+        i = 0
+        for ns in range(len(weights)):
+            for nd in range(len(weights[0])):
+                self.assertEquals(weights[ns][nd], connections[i][2])
+                self.assertEquals(ns, connections[i][0])
+                self.assertEquals(nd, connections[i][1])
+                self.assertEquals(1, connections[i][3])
+                i += 1
+
     def test_canGetTrainingData(self):
         Network = n.NeuralNet()
         path = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/test/"
@@ -206,42 +223,42 @@ class neuralNetTests(unittest.TestCase):
         files.append(path + "testSampleLeft")
         files.append(path + "testSampleRight")
 
-        hab = Network.setUpInitialTraining(1024, 40, files[0], files[1], 100,
-                                           iterations=2)
+        hab = Network.setUpForTraining(1024, 40, files[0], files[1], 100,
+                                       iterations=2)
     def test_canSetupWithWeights(self):
-        net = n.NeuralNet()
-        path = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/test/"
+        with n.NeuralNet() as net:
+            path = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/test/"
 
-        files = []
-        files.append(path + "testSampleLeft")
-        files.append(path + "testSampleRight")
+            files = []
+            files.append(path + "testSampleLeft")
+            files.append(path + "testSampleRight")
 
-        weights = [[0., 1., 2.], [3., 4., 5.]]
+            weights = [[0., 1., 2.], [3., 4., 5.]]
 
-        data = net.setUpTrainingWithWeights(weights, files[0], files[1])
-        net.run(10)
+            data = net.setUpTrainingWithWeights(weights, files[0], files[1])
+            net.run(10)
 
-        unrolledWeights = [w for neuron in weights for w in neuron]
-        stw = net.connections[0].proj.getWeights(format='array')
-        unrolledStW = [w for neuron in stw for w in neuron]
+            unrolledWeights = [w for neuron in weights for w in neuron]
+            stw = net.connections[0].proj.getWeights(format='array')
+            unrolledStW = [w for neuron in stw for w in neuron]
 
-        self.assertEquals(len(unrolledStW) ,len(unrolledWeights),
-                          str(len(unrolledStW)) + " != " + str(len(unrolledWeights)) + " weights set incorrecty!")
+            self.assertEquals(len(unrolledStW) ,len(unrolledWeights),
+                              str(len(unrolledStW)) + " != " + str(len(unrolledWeights)) + " weights set incorrecty!")
 
     def test_canSetupEvaluation(self):
-        net = n.NeuralNet()
-        path = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/test/"
+        with n.NeuralNet() as net:
+            path = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/test/"
 
-        files = []
-        files.append(path + "testSampleLeft")
-        files.append(path + "testSampleRight")
+            files = []
+            files.append(path + "testSampleLeft")
+            files.append(path + "testSampleRight")
 
-        weights = [[0., 1., 2.], [3., 4., 5.]]
+            weights = [[0., 1., 2.], [3., 4., 5.]]
 
-        data = net.setUpEvaluation(weights, files[0], files[1])
+            data = net.setUpEvaluation(weights, files[0], files[1])
 
-        self.assertEquals(files[0], net.annotations[0], "annotations set in correct order")
-        self.assertEquals(files[1], net.annotations[1], "annotations set in correct order")
+            self.assertEquals(files[0], net.annotations[0], "annotations set in correct order")
+            self.assertEquals(files[1], net.annotations[1], "annotations set in correct order")
 
         # net.run(1)
         #
