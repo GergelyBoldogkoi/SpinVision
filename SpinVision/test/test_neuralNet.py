@@ -208,6 +208,25 @@ class neuralNetTests(unittest.TestCase):
 
         hab = Network.setUpInitialTraining(1024, 40, files[0], files[1], 100,
                                            iterations=2)
+    def test_canSetupWithWeights(self):
+        net = n.NeuralNet()
+        path = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/test/"
+
+        files = []
+        files.append(path + "testSampleLeft")
+        files.append(path + "testSampleRight")
+
+        weights = [[0., 1., 2.], [3., 4., 5.]]
+
+        data = net.setUpTrainingWithWeights(weights, files[0], files[1])
+        net.run(10)
+
+        unrolledWeights = [w for neuron in weights for w in neuron]
+        stw = net.connections[0].proj.getWeights(format='array')
+        unrolledStW = [w for neuron in stw for w in neuron]
+
+        self.assertEquals(len(unrolledStW) ,len(unrolledWeights),
+                          str(len(unrolledStW)) + " != " + str(len(unrolledWeights)) + " weights set incorrecty!")
 
     def test_canSetupEvaluation(self):
         net = n.NeuralNet()
@@ -232,23 +251,4 @@ class neuralNetTests(unittest.TestCase):
         #
         # self.assertEquals(conWeights, weights) #Todo weights work correctly, but different type numbers are returned, find a way to compare them
 
-    def test_canTrain(self):
 
-        path = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/test/"
-
-        files = []
-        files.append(path + "10xtestSampleLeft")
-        files.append(path + "10xtestSampleRight")
-        # net1 = n.NeuralNet(1)
-        # out1 = net1.train(40,1,10, traininDirs, filterInputFiles="concat15")
-        # net1.plotSpikes(out1)
-
-
-        net2 = n.NeuralNet(1)
-        out2 = net2.trainFromFile(956, 40, 1, 100, files[0], files[1])
-
-
-        net2.plotSpikes(out2['outPutLayer'], block=True)
-
-        print out2['trainedWeights']
-        print len(out2['trainedWeights'])

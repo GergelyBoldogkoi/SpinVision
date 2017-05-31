@@ -14,7 +14,7 @@ class NeuralNet(object):
     __neuronParameters__ = {
         'cm': 1.0,  # The capacitance of the LIF neuron in nano-Farads
         'tau_m': 20.0,  # The time-constant of the RC circuit, in millisecon
-        'tau_refrac': 2.0,  # The refractory period, in milliseconds
+        'tau_refrac': 20.0,  # The refractory period, in milliseconds
         'v_reset': -70.0,  # The voltage to set the neuron at immediately after a spike
         'v_rest': -65,  # The ambient rest voltage of the neuron
         'v_thresh': -50,  # The threshold voltage at which the neuron will spike
@@ -198,6 +198,32 @@ class NeuralNet(object):
                 'inhibitoryConnection': inhibitoryNr, 'STDPConnection': stdpNr,
                 'lastSpikeAt': lastSpike}
 
+    def setUpTrainingWithWeights(self, weights, source1, source2, delay=1):
+        # len(weights[0]) returns how many output neurons there are,
+        # as all inputs are connected to all outputs, so it doesn't really matter
+        # precisely which element of weights we take
+        nrOut = len(weights[0])
+        nrIn = len(weights)
+
+        outputLayerNr = self.addLayer(nrOut, self.__neuronType__, self.__neuronParameters__)
+
+        bundle = getTrainingData(nrIn, source1, source2, 1, 100)
+        evalSpikes = bundle['spikeTimes']
+
+        lastSpike = bundle['lastSpikeAt']
+
+        inputLayerNr = self.addInputLayer(nrIn, evalSpikes)
+
+        neuronConnections = [0] * nrIn*nrOut
+        for i in range(nrIn):
+            for j in range(nrOut):
+                neuronConnections[i * nrOut + j] = (i, j, weights[i][j], delay)
+
+        connection = self.connect(inputLayerNr, outputLayerNr, p.FromListConnector(neuronConnections), type='excitatory')
+
+        return {'inputLayer': inputLayerNr, 'outputLayer': outputLayerNr,
+                'connection': connection, 'runTime': lastSpike}
+
 
     def setUpEvaluation(self, weights, source1, source2, delay=1):
         # len(weights[0]) returns how many output neurons there are,
@@ -234,22 +260,7 @@ class NeuralNet(object):
     # ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     # This function trains the network
-    def trainFromFile(self, inputLayerSize ,outputLayerSize, iterations, timeBetweenSamples, source1, source2):
 
-        # todo input layer should have fixed size
-        net = self.setUpInitialTraining(inputLayerSize, outpuLayerSize=outputLayerSize, source1=source1, source2=source2,
-                                        timeBetweenSamples=timeBetweenSamples, iterations=iterations)
-
-        runTime = int(net['lastSpikeAt'] + 10)
-        print str(runTime) + " this is the RunTime"
-        self.run(runTime, record=True)
-
-        outputPop = self.layers[net['outputLayer']].pop
-
-        weight = self.connections[net['STDPConnection']].proj.getWeights(format="array")
-
-        return {'outPutLayer': net['outputLayer'],
-                'trainedWeights': weight}
 
 
 
