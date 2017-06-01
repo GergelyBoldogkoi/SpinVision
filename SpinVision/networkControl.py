@@ -7,7 +7,9 @@ ITERATIONS = 5
 RUNTIME_CONSTANT = 1
 MAX_ITERATIONS_FOR_TRAINING_RUN = 40 #Todo tune this number
 
-
+# This function is an overarhching training method, calling the sub training methods multiple times
+# It is necessary, as SpiNNaker does not have enough memory to load a very long training file
+# so shorter versions of the training file are loaded onto the machine again and again, to achieve high iteration training
 def train(inputSize, outputSize, iterations, source1, source2, save=False, destFile=None, plot=False):
     netWorkData = trainFromFile(inputSize, outputSize, 1
                             , TIME_BETWEEN_ITERATIONS, source1, source2)
@@ -80,14 +82,25 @@ def trainWithWeights(weights, iterations, source1, source2, plot=False):
             'trainedWeights': weights}
 
 
+def evaluate(stimulusSource1, stimulusSource2, unWeightSource, tWeightSource, plotResponse=False):
+
+    untrainedWeigts = loadWeights(unWeightSource)
+    trainedWeights = loadWeights(tWeightSource)
+
+    spikes = getNetworkResponses(untrainedWeigts, trainedWeights, stimulusSource1, stimulusSource2)
+
+    untrainedSpikes = spikes['untrained']
+    trainedSpikes = spikes['trained']
 
 
-def evaluateWithWeights(untranedWeights, trainedWeights, source1, source2):
+# This function creates an untrained and a trained network, gets their responses to stimuli
+# located in source1 and source 2
+def getNetworkResponses(untrainedWeights, trainedWeights, source1, source2, plot=False):
     untrainedSpikes = []
     trainedSpikes = []
     with n.NeuralNet() as untrainedNet:
         # set up network
-        untrainedData = untrainedNet.setUpEvaluation(untranedWeights, source1, source2)
+        untrainedData = untrainedNet.setUpEvaluation(untrainedWeights, source1, source2)
         # evaluate
         out = untrainedData['outputLayer']
         runTime = untrainedData['runTime'] / RUNTIME_CONSTANT
@@ -106,9 +119,10 @@ def evaluateWithWeights(untranedWeights, trainedWeights, source1, source2):
         outLayer = trainedNet.layers[out].pop
         trainedSpikes = outLayer.getSpikes(compatible_output=True)
 
+    if plot:
+        plotEval(untrainedSpikes, trainedSpikes)
 
-    print untrainedSpikes
-    plotEval(untrainedSpikes, trainedSpikes)
+    return {'untrained': untrainedSpikes, 'trained': trainedSpikes}
 
 
 

@@ -100,7 +100,7 @@ class networkControlTests(unittest.TestCase):
 
         control.plotEval(untrainedSpikes, trainedSpikes)
 
-    def test_canEvaluateWithWeights(self):
+    def test_canGetNetworkResponses(self):
         path = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/test/"
         files = []
         files.append(path + "10xtestSampleLeft")
@@ -111,11 +111,19 @@ class networkControlTests(unittest.TestCase):
         unTrainedWeights = control.loadWeights(path + "testUntrained_1024x40")
         trainedWeights = control.loadWeights(path + "fullNetworkWeights")
 
-        control.evaluateWithWeights(unTrainedWeights, trainedWeights, files[0], files[1])
+        control.getNetworkResponses(unTrainedWeights, trainedWeights, files[0], files[1])
 
+    def test_canEvaluate(self):
+        path = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/test/"
+        files = []
+        files.append(path + "10xtestSampleLeft")
+        files.append(path + "10xtestSampleRight")
 
+        path = "/home/kavits/Project/SpinVision/SpinVision/resources/NetworkWeights/test/"
+        files.append(path + "testUntrained_1024x40")
+        files.append(path + "fullNetworkWeights")
 
-
+        control.evaluate(files[0], files[1], files[2], files[3])
 
 
 
