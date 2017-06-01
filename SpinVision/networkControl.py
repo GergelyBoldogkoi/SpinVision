@@ -5,35 +5,51 @@ import matplotlib.pyplot as plt
 TIME_BETWEEN_ITERATIONS = 200
 ITERATIONS = 5
 RUNTIME_CONSTANT = 1
-MAX_ITERATIONS_FOR_TRAINING_RUN = 40 #Todo tune this number
+MAX_ITERATIONS_FOR_TRAINING_RUN = 40  # Todo tune this number
+
 
 # This function is an overarhching training method, calling the sub training methods multiple times
 # It is necessary, as SpiNNaker does not have enough memory to load a very long training file
 # so shorter versions of the training file are loaded onto the machine again and again, to achieve high iteration training
-def train(inputSize, outputSize, iterations, source1, source2, save=False, destFile=None, plot=False):
-    netWorkData = trainFromFile(inputSize, outputSize, 1
-                            , TIME_BETWEEN_ITERATIONS, source1, source2)
-    weights = netWorkData['trainedWeights']
-    iterations -= 1
+def train(inputSize, outputSize, iterations, source1, source2, weightSource=None, save=False, destFile=None,
+          plot=False):
+    weights = None
+    untrainedWeights = None
 
-    plotSpikes = False
-    print iterations
+    # If we want to train from scratch (e.g. no good initial weights we can use)
+    if weightSource is None:
+        netWorkData = trainFromFile(inputSize, outputSize, 1
+                                    , TIME_BETWEEN_ITERATIONS, source1, source2)
+        weights = netWorkData['trainedWeights']
+        iterations -= 1
+    else:
+        weights = loadWeights(weightSource)
+        untrainedWeights = weights
+
+    weights = doTrainingIterations(iterations, source1, source2, weights)
+
+    if save:
+        saveWeights(weights, destFile)
+
+    if plot and untrainedWeights is not None:
+        getNetworkResponses(untrainedWeights, weights, source1, source1, plot)
+
+    return weights
+
+
+def doTrainingIterations(iterations, source1, source2, weights):
+
     while iterations > 0:
         currentIter = MAX_ITERATIONS_FOR_TRAINING_RUN
 
         if iterations - currentIter <= 0:
             currentIter = iterations
-            if plot:
-                plotSpikes = True
 
-        netWorkData = trainWithWeights(weights, currentIter,
-                                       source1, source2, plotSpikes)
-
+        netWorkData = trainWithWeights(weights, currentIter, source1, source2)
+        iterations -= currentIter
         weights = netWorkData['trainedWeights']
 
-        iterations -= currentIter
-
-
+    return weights
 
 
 def trainFromFile(inputLayerSize, outputLayerSize, iterations, timeBetweenSamples, source1, source2, plot=False):
@@ -58,7 +74,6 @@ def trainFromFile(inputLayerSize, outputLayerSize, iterations, timeBetweenSample
 def trainWithWeights(weights, iterations, source1, source2, plot=False):
     out = None
     with n.NeuralNet() as net:
-
         inputLayerSize = len(weights)
         outPutLayerSize = len(weights[0])  # any element of weight is fine
 
@@ -77,13 +92,11 @@ def trainWithWeights(weights, iterations, source1, source2, plot=False):
         if plot:
             net.plotSpikes(out, block=True)
 
-
     return {'outPutLayer': out,
             'trainedWeights': weights}
 
 
 def evaluate(stimulusSource1, stimulusSource2, unWeightSource, tWeightSource, plotResponse=False):
-
     untrainedWeigts = loadWeights(unWeightSource)
     trainedWeights = loadWeights(tWeightSource)
 
@@ -110,7 +123,6 @@ def getNetworkResponses(untrainedWeights, trainedWeights, source1, source2, plot
         untrainedSpikes = outLayer.getSpikes(compatible_output=True)
 
     with n.NeuralNet() as trainedNet:
-
         trainedData = trainedNet.setUpEvaluation(trainedWeights, source1, source2)
         out = trainedData['outputLayer']
         runTime = trainedData['runTime'] / RUNTIME_CONSTANT
@@ -123,8 +135,6 @@ def getNetworkResponses(untrainedWeights, trainedWeights, source1, source2, plot
         plotEval(untrainedSpikes, trainedSpikes)
 
     return {'untrained': untrainedSpikes, 'trained': trainedSpikes}
-
-
 
 
 def saveWeights(weights, destFile):
@@ -144,6 +154,7 @@ def loadWeights(sourceFile):
             weights[i] = [float(w) for w in lines[i].split()]
 
     return weights
+
 
 def plotEval(untrainedSpikes, trainedSpikes):
     b, axarr = plt.subplots(2, sharex=True, sharey=True)

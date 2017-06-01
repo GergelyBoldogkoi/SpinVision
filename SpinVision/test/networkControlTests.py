@@ -86,13 +86,7 @@ class networkControlTests(unittest.TestCase):
 
         os.remove(files[0])
 
-    def test_canTrain(self):
-        path = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/test/"
-        files = []
-        files.append(path + "10xtestSampleLeft")
-        files.append(path + "10xtestSampleRight")
 
-        weights = control.train(1024, 40, 200, files[0], files[1], plot=True)
 
     def test_canPlotEval(self):
         untrainedSpikes = np.array([[0, 1], [1, 1], [2, 1]])
@@ -124,6 +118,16 @@ class networkControlTests(unittest.TestCase):
         files.append(path + "fullNetworkWeights")
 
         control.evaluate(files[0], files[1], files[2], files[3])
+
+    def test_canTrainWithWeightSource(self):
+        path = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/test/"
+        files = []
+        files.append(path + "10xtestSampleLeft")
+        files.append(path + "10xtestSampleRight")
+        path = "/home/kavits/Project/SpinVision/SpinVision/resources/NetworkWeights/test/"
+        files.append(path + "testUntrained_1024x40")
+        # this is not gonna plot, just there to see if an error is raised
+        weights = control.train(1024, 40, 100, files[0], files[1], plot=True, weightSource=files[2])
 
 
 
