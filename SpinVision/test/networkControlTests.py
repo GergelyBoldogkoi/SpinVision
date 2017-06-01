@@ -4,6 +4,7 @@ import SpinVision.neuralNet as n
 import SpinVision.AEDAT_Handler as f
 import SpinVision.networkControl as control
 import os
+import numpy as np
 
 basePath = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/test/"
 
@@ -61,7 +62,7 @@ class networkControlTests(unittest.TestCase):
 
         weights = control.loadWeights(sourceFile)
 
-        out = control.trainWithWeights(weights, 40, files[0], files[1], plot=True)
+        out = control.trainWithWeights(weights, 2, files[0], files[1], plot=True)
         trainedWeights = out['trainedWeights']
         unrolledWeights = [w for neuron in weights for w in neuron]
         flatTrainedWeights = [w for neuron in trainedWeights for w in neuron]
@@ -92,6 +93,26 @@ class networkControlTests(unittest.TestCase):
         files.append(path + "10xtestSampleRight")
 
         weights = control.train(1024, 40, 200, files[0], files[1], plot=True)
+
+    def test_canPlotEval(self):
+        untrainedSpikes = np.array([[0, 1], [1, 1], [2, 1]])
+        trainedSpikes = np.array([[0, 4], [1, 4], [2, 4]])
+
+        control.plotEval(untrainedSpikes, trainedSpikes)
+
+    def test_canEvaluateWithWeights(self):
+        path = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/test/"
+        files = []
+        files.append(path + "10xtestSampleLeft")
+        files.append(path + "10xtestSampleRight")
+
+        path = "/home/kavits/Project/SpinVision/SpinVision/resources/NetworkWeights/test/"
+
+        unTrainedWeights = control.loadWeights(path + "testUntrained_1024x40")
+        trainedWeights = control.loadWeights(path + "fullNetworkWeights")
+
+        control.evaluateWithWeights(unTrainedWeights, trainedWeights, files[0], files[1])
+
 
 
 

@@ -105,7 +105,7 @@ class neuralNetTests(unittest.TestCase):
             Network.connect(pre, post, p.OneToOneConnector(weights=5, delays=1))
             Network.run(10)
             Network.sampleTimes = [{'start': 1, 'end': 2}]
-            Network.plotSpikes(post)
+            Network.plotSpikes(post,block=True)
 
     def test_canReadSpikes(self):
         Network = n.NeuralNet()

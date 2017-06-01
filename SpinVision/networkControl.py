@@ -1,7 +1,8 @@
 import neuralNet as n
 import AEDAT_Handler as f
+import matplotlib.pyplot as plt
 
-TIME_BETWEEN_ITERATIONS = 100
+TIME_BETWEEN_ITERATIONS = 200
 ITERATIONS = 5
 RUNTIME_CONSTANT = 1
 MAX_ITERATIONS_FOR_TRAINING_RUN = 40 #Todo tune this number
@@ -30,10 +31,7 @@ def train(inputSize, outputSize, iterations, source1, source2, save=False, destF
 
         iterations -= currentIter
 
-# def evaluate(weightSouceFile, source1, source2):
-#     weights = loadWeights(weightSouceFile)
-#     with n.NeuralNet() as net1:
-#         net1.setUpEvaluation()
+
 
 
 def trainFromFile(inputLayerSize, outputLayerSize, iterations, timeBetweenSamples, source1, source2, plot=False):
@@ -82,6 +80,39 @@ def trainWithWeights(weights, iterations, source1, source2, plot=False):
             'trainedWeights': weights}
 
 
+
+
+def evaluateWithWeights(untranedWeights, trainedWeights, source1, source2):
+    untrainedSpikes = []
+    trainedSpikes = []
+    with n.NeuralNet() as untrainedNet:
+        # set up network
+        untrainedData = untrainedNet.setUpEvaluation(untranedWeights, source1, source2)
+        # evaluate
+        out = untrainedData['outputLayer']
+        runTime = untrainedData['runTime'] / RUNTIME_CONSTANT
+        untrainedNet.run(runTime)
+
+        outLayer = untrainedNet.layers[out].pop
+        untrainedSpikes = outLayer.getSpikes(compatible_output=True)
+
+    with n.NeuralNet() as trainedNet:
+
+        trainedData = trainedNet.setUpEvaluation(trainedWeights, source1, source2)
+        out = trainedData['outputLayer']
+        runTime = trainedData['runTime'] / RUNTIME_CONSTANT
+        trainedNet.run(runTime)
+
+        outLayer = trainedNet.layers[out].pop
+        trainedSpikes = outLayer.getSpikes(compatible_output=True)
+
+
+    print untrainedSpikes
+    plotEval(untrainedSpikes, trainedSpikes)
+
+
+
+
 def saveWeights(weights, destFile):
     with open(destFile, 'w') as writeTo:
         for ns in weights:
@@ -99,3 +130,14 @@ def loadWeights(sourceFile):
             weights[i] = [float(w) for w in lines[i].split()]
 
     return weights
+
+def plotEval(untrainedSpikes, trainedSpikes):
+    b, axarr = plt.subplots(2, sharex=True, sharey=True)
+    axarr[0].plot(untrainedSpikes[:, 1], untrainedSpikes[:, 0], ls='', marker='|', markersize=8, ms=1)
+    axarr[0].set_title('Before Training')
+    axarr[1].set_title('After Training')
+    axarr[1].plot(trainedSpikes[:, 1], trainedSpikes[:, 0], ls='', marker='|', markersize=8, ms=1)
+
+    axarr[0].grid()
+    axarr[1].grid()
+    plt.show()

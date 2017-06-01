@@ -151,7 +151,7 @@ class NeuralNet(object):
     #                           OPERATION
     # ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     # runs simulation
-    def run(self, runTime, record=True, record_v=True):
+    def run(self, runTime, record=True, record_v=False):
         self.runTime = runTime
 
         for layer in self.layers:
@@ -256,10 +256,12 @@ class NeuralNet(object):
     # plots spikes of a layer
     def plotSpikes(self, layerId, marker='|', block=False, delayMargin=10):
         spikes = self.layers[layerId].pop.getSpikes(compatible_output=True)
+        print type(spikes)
+        print spikes
 
         ylim = self.layers[layerId].pop.size
 
-        plt.plot(spikes[:, 1], spikes[:, 0], ls='', marker=marker, markersize=4, ms=1)
+        plt.plot(spikes[:, 1], spikes[:, 0], ls='', marker=marker, markersize=8, ms=1)
         # for element in self.sampleTimes:
         #     print "delim at: " + str(element)
         #     plt.plot((element - delayMargin, element - delayMargin), (0, ylim), color='k')
@@ -412,7 +414,6 @@ def createConnectionsFromWeights(weights, delay=1):
 def orderRandomly(aedata1, aedata2, iterations):
     # TODO extend to handle a list of inputs
     # randomize order
-    print "iterations for ordering: " + str(iterations)
     ordering = [0] * 2 * iterations
     counter1 = 0
     counter2 = 0
@@ -426,7 +427,6 @@ def orderRandomly(aedata1, aedata2, iterations):
             ordering[i] = aedata2
             counter2 += 1
 
-    print len(ordering)
     return ordering
 
 # ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
