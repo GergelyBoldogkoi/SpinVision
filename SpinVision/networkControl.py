@@ -1,6 +1,7 @@
 import neuralNet as n
 import AEDAT_Handler as f
 import matplotlib.pyplot as plt
+import traceback
 
 TIME_BETWEEN_ITERATIONS = 200
 ITERATIONS = 5
@@ -73,24 +74,28 @@ def trainFromFile(inputLayerSize, outputLayerSize, iterations, timeBetweenSample
 
 def trainWithWeights(weights, iterations, source1, source2, plot=False):
     out = None
-    with n.NeuralNet() as net:
-        inputLayerSize = len(weights)
-        outPutLayerSize = len(weights[0])  # any element of weight is fine
+    try:
+        with n.NeuralNet() as net:
+            inputLayerSize = len(weights)
+            outPutLayerSize = len(weights[0])  # any element of weight is fine
 
-        networkData = net.setUpForTraining(inputLayerSize, outPutLayerSize,
-                                           source1=source1, source2=source2,
-                                           timeBetweenSamples=TIME_BETWEEN_ITERATIONS, iterations=iterations,
-                                           weights=weights)
+            networkData = net.setUpForTraining(inputLayerSize, outPutLayerSize,
+                                               source1=source1, source2=source2,
+                                               timeBetweenSamples=TIME_BETWEEN_ITERATIONS, iterations=iterations,
+                                               weights=weights)
 
-        runTime = int(networkData['lastSpikeAt'] + 10) / RUNTIME_CONSTANT
+            runTime = int(networkData['lastSpikeAt'] + 10) / RUNTIME_CONSTANT
 
-        net.run(runTime, record=True)
+            net.run(runTime, record=True)
 
-        weights = net.connections[networkData['STDPConnection']].proj.getWeights(format="array")
-        out = networkData['outputLayer']
+            weights = net.connections[networkData['STDPConnection']].proj.getWeights(format="array")
+            out = networkData['outputLayer']
 
-        if plot:
-            net.plotSpikes(out, block=True)
+            if plot:
+                net.plotSpikes(out, block=True)
+    except:
+        print "yooo"
+        tb = traceback.format_exc()
 
     return {'outPutLayer': out,
             'trainedWeights': weights}
@@ -158,6 +163,7 @@ def loadWeights(sourceFile):
 
 def plotEval(untrainedSpikes, trainedSpikes):
     b, axarr = plt.subplots(2, sharex=True, sharey=True)
+    print untrainedSpikes
     axarr[0].plot(untrainedSpikes[:, 1], untrainedSpikes[:, 0], ls='', marker='|', markersize=8, ms=1)
     axarr[0].set_title('Before Training')
     axarr[1].set_title('After Training')

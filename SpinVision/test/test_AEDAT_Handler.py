@@ -1,7 +1,9 @@
 import unittest
 import SpinVision.AEDAT_Handler as handler
 import os
-import numpy
+import numpy as np
+import paer
+import logging
 
 
 # numpy.set_printoptions(threshold=numpy.nan)
@@ -86,6 +88,62 @@ class AEDATHandlerTests(unittest.TestCase):
         destFile = "/spedUp"
         speedFactor = 10
         handler.speedUp(speedFactor, sourceFile, self.__basePath__ + destFile)
+
+    @unittest.skip
+    def test_canFilterMode(self):
+
+        firstTimestamps = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        secondTimestamps = [0, 0, 1, 1, 1, 1, 1, 1, 1, 1]
+
+        #first tests if ON events are recognised correctly
+        firstX = [0, 0, 0, 1, 2, 2, 3, 3, 16, 17]
+        firstY = [4, 5, 7, 6, 5, 7, 5, 6, 16, 17]
+        firstT = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+
+        # second tests if OFF events are recognised correctly
+        secondX = [16, 17, 0, 0, 0, 1, 2, 2, 3, 3]
+        secondY = [15, 18, 4, 5, 7, 6, 5, 7, 5, 6]
+        secondT = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+        # third tests that the Mode actually wins
+        thirdTs = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
+        thirdX = [0, 0, 0, 1, 2, 2, 3, 3, 3, 1, 1]
+        thirdY = [4, 5, 7, 6, 5, 7, 5, 6, 7, 5, 7]
+        thirdT = [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1]
+
+        # fourth tests that the in case of equal on and off on wins
+        fourthTs = [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]
+        fourthX = [0, 0, 0, 1, 2, 2, 3, 3, 3, 1, 1, 3]
+        fourthY = [4, 5, 7, 6, 5, 7, 5, 6, 7, 5, 7, 4]
+        fourthT = [0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1]
+
+
+        data = paer.aedata()
+        data.ts = np.array(firstTimestamps + secondTimestamps + thirdTs + fourthTs)
+        data.x = np.array(firstX + secondX + thirdX + fourthX)
+        data.y = np.array(firstY + secondY + thirdY + fourthY)
+        data.t = np.array(firstT + secondT + thirdT + fourthT)
+
+        data = handler.filterMode(data, 4)
+
+        print data.x.tolist()
+        print data.y.tolist()
+        print data.t.tolist()
+        print data.ts.tolist()
+
+        self.assertEquals([0, 0, 0, 0], data.x.tolist())
+        self.assertEquals([1, 1, 1, 1], data.y.tolist())
+        self.assertEquals([1, 0, 0, 1], data.t.tolist())
+        self.assertEquals([0, 1, 2, 3], data.ts.tolist())
+
+    @unittest.skip
+    def test_canMeanDownSample(self):
+
+        source  = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/test/"
+        source2 = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/"
+
+        data = handler.modeDownsample(source2 + "Pos3To5_lowAngle_Sample1", source2 + "whatNow")
+
 
 
 

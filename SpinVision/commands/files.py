@@ -13,14 +13,19 @@ def truncateRecording(source, start,end, dest):
 
 
 
-# truncateRecording(basepath + "Pos3To5_lowAngle_32x32", 374545004, 377171417, basepath + "/TrainingSamples/Pos3To5_lowAngle_32x32/Sample1")
+#truncateRecording(basepath + "Pos3To5_lowAngle", 374545004, 377171417, basepath + "Pos3To5_lowAngle_Sample1")
 # truncateRecording(basepath + "Pos3To5_lowAngle_32x32", 381759446, 385325434, basepath + "/TrainingSamples/Pos3To5_lowAngle_32x32/Sample2")
 # truncateRecording(basepath + "Pos3To5_lowAngle_32x32", 389753227, 391839810, basepath + "/TrainingSamples/Pos3To5_lowAngle_32x32/Sample3")
 
 traininDirs = []
-traininDirs.append(basepath + "Pos3To1_lowAngle")
-traininDirs.append(basepath + "Pos3To5_lowAngle")
-destFile = basepath + "Pos3To5_lowAngle_16x16"
+traininDirs.append(basepath + "Pos3To5_lowAngle_Sample1")
+destFile = basepath + "Pos3To5_lowAngle_Sample1_filtered"
+
+source = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/test/"
+
+handler.readData(source + "10xtestSampleLeft")
+
+# handler.modeDownsample(traininDirs[0], destFile)
 
 # handler.downsample(traininDirs[1], destFile, 8)
 # handler.concatenate(traininDirs, 100000, filter="Sample", dest=destFile, save=False)

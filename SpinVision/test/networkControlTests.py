@@ -127,7 +127,7 @@ class networkControlTests(unittest.TestCase):
         path = "/home/kavits/Project/SpinVision/SpinVision/resources/NetworkWeights/test/"
         files.append(path + "testUntrained_1024x40")
         # this is not gonna plot, just there to see if an error is raised
-        weights = control.train(1024, 40, 100, files[0], files[1], plot=True, weightSource=files[2])
+        weights = control.train(1024, 40, 2, files[0], files[1], plot=True, weightSource=files[2])
 
 
 

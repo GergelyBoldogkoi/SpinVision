@@ -5,6 +5,7 @@ from collections import namedtuple
 import AEDAT_Handler as f
 import random as r
 
+
 Layer = namedtuple("Layer", "pop nType nParams")
 Connection = namedtuple("Connection", "proj pre post connectivity type")
 
@@ -122,7 +123,8 @@ class NeuralNet(object):
         weightRule = None
         if weightMod == 'additive':
             weightRule = p.AdditiveWeightDependence(w_max=wMax, w_min=wMin, A_plus=aPlus, A_minus=aMinus)
-        # TODO add multiplicative weightrule
+        elif weightMod == 'multiplicative':
+            weightRule = p.MultiplicativeWeightDependence(wMin, wMax, aPlus, aMinus)
         else:
             raise TypeError(str(weightMod) + " is not a known weight modification rule for STDP \n"
                                              "try \'additive\' or \'multiplicative\'")

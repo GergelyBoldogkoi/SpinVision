@@ -98,6 +98,16 @@ class neuralNetTests(unittest.TestCase):
         assert lID2 == Network.connections[c].post
         assert 'STDP' == Network.connections[c].type
 
+        lID1 = Network.addBasicLayer(2)
+        lID2 = Network.addBasicLayer(2)
+
+        c = Network.connectWithSTDP(lID1, lID2, weightMod='multiplicative')
+
+        assert 1 == c
+        assert lID1 == Network.connections[c].pre
+        assert lID2 == Network.connections[c].post
+        assert 'STDP' == Network.connections[c].type
+
     def test_canPlotSpikes(self):
         with n.NeuralNet() as Network:
             pre = Network.addInputLayer(3, [[0, 2], [1, 3], [0]])
@@ -105,7 +115,7 @@ class neuralNetTests(unittest.TestCase):
             Network.connect(pre, post, p.OneToOneConnector(weights=5, delays=1))
             Network.run(10)
             Network.sampleTimes = [{'start': 1, 'end': 2}]
-            Network.plotSpikes(post,block=True)
+            Network.plotSpikes(post,block=False)
 
     def test_canReadSpikes(self):
         Network = n.NeuralNet()
