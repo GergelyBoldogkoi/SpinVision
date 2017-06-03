@@ -120,12 +120,12 @@ class networkControlTests(unittest.TestCase):
         control.evaluate(files[0], files[1], files[2], files[3])
 
     def test_canTrainWithWeightSource(self):
-        path = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/test/"
+        path = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/"
         files = []
-        files.append(path + "10xtestSampleLeft")
-        files.append(path + "10xtestSampleRight")
+        files.append(path + "Pos3To1_lowAngle_16x16")
+        files.append(path + "Pos3To5_lowAngle_16x16")
         path = "/home/kavits/Project/SpinVision/SpinVision/resources/NetworkWeights/test/"
-        files.append(path + "testUntrained_1024x40")
+        files.append(path + "testUntrainedGaussian_1024x40")
         # this is not gonna plot, just there to see if an error is raised
         weights = control.train(1024, 40, 2, files[0], files[1], plot=True, weightSource=files[2])
 

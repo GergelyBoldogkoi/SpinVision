@@ -6,8 +6,4 @@ import random as r
 basepath = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/TrainingSamples"
 traininDirs = [basepath]
 
-timeBetweenSamples = 100
-
-Network = n.NeuralNet()
-
 
