@@ -179,7 +179,27 @@ class neuralNetTests(unittest.TestCase):
         nrDest = 100
         connections = n.createGaussianConnections(nrSource, nrDest, mean, 0.15)
 
+    def test_canCreateUniformConnections(self):
+        wMax = 1
+        wMin = 0
+        nrSource = 100
+        nrDest = 100
+        connections = n.createUniformConnections(nrSource, nrDest, wMax, wMin)
+
         self.assertEquals(nrSource * nrDest, len(connections))
+
+    def test_canRandomoseDelays(self):
+        wMax = 1
+        wMin = 0
+        nrSource = 100
+        nrDest = 100
+        connections = n.createUniformConnections(nrSource, nrDest, wMax, wMin)
+
+        newConn = n.randomiseDelays('gaussian', connections)
+        self.assertEquals(len(connections), len(newConn))
+
+        newConn = n.randomiseDelays('uniform', connections)
+        self.assertEquals(len(connections), len(newConn))
 
     def test_canCreateConnectionsFromWeights(self):
         weights = [[0,2,3],[5,6,7]]

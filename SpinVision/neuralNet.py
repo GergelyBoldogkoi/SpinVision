@@ -15,15 +15,40 @@ Connection = namedtuple("Connection", "proj pre post connectivity type")
 
 
 class NeuralNet(object):
+    # __neuronType__ = p.IF_curr_exp
+    # __neuronParameters__ = {
+    #     'cm': 12,  # The capacitance of the LIF neuron in nano-Farads
+    #     'tau_m': 110,  # The time-constant of the RC circuit, in milliseconds
+    #     'tau_refrac': 40,  # The refractory period, in milliseconds
+    #     'v_reset': -70.0,  # The voltage to set the neuron at immediately after a spike
+    #     'v_rest': -65,  # The ambient rest voltage of the neuron
+    #     'v_thresh': -61,  # The threshold voltage at which the neuron will spike
+    #     'tau_syn_E': 5.0,  # The excitatory input current decay time-constant
+    #     'tau_syn_I': 10,  # The inhibitory input current decay time-constant
+    #     'i_offset': 0.0  # A base input current to add each timestep
+    # }
+    # __STDPParameters__ = {
+    #     'mean': 0.5,
+    #     'std': 0.15,
+    #     'delay': 1,
+    #     'weightRule': 'additive',
+    #     'tauPlus': 50,
+    #     'tauMinus': 60,
+    #     'wMax': 1,
+    #     'wMin': 0,
+    #     'aPlus': 0.05,
+    #     'aMinus': 0.05,
+    #     'weightInit': 'uniform'
+    # }
     __neuronParameters__ = {
-        'cm': 1.0,  # The capacitance of the LIF neuron in nano-Farads
-        'tau_m': 20.0,  # The time-constant of the RC circuit, in millisecon
-        'tau_refrac': 20.0,  # The refractory period, in milliseconds
+        'cm': 1,  # The capacitance of the LIF neuron in nano-Farads
+        'tau_m': 20,  # The time-constant of the RC circuit, in millisecon
+        'tau_refrac': 40.0,  # The refractory period, in milliseconds
         'v_reset': -70.0,  # The voltage to set the neuron at immediately after a spike
         'v_rest': -65,  # The ambient rest voltage of the neuron
-        'v_thresh': -50,  # The threshold voltage at which the neuron will spike
+        'v_thresh': -61,  # The threshold voltage at which the neuron will spike
         'tau_syn_E': 5.0,  # The excitatory input current decay time-constant
-        'tau_syn_I': 5.0,  # The inhibitory input current decay time-constant
+        'tau_syn_I': 10.0,  # The inhibitory input current decay time-constant
         'i_offset': 0.0  # A base input current to add each timestep
     }
     __neuronType__ = p.IF_curr_exp
@@ -38,7 +63,8 @@ class NeuralNet(object):
         'wMax': 1,
         'wMin': 0,
         'aPlus': 0.5,
-        'aMinus': 0.5
+        'aMinus': 0.5,
+        'weightInit': 'uniform'
     }
 
     def __init__(self, timeStep=1):
@@ -111,11 +137,11 @@ class NeuralNet(object):
         self.connections.append(connection)
         return len(self.connections) - 1
 
-    def connectWithSTDP(self, pre, post, initWeightMean=0.5, initWeightStd=0.15, delay=1,
+    def connectWithSTDP(self, pre, post,initWeightMean=0.5, initWeightStd=0.15, delay=1,
                         weightMod='additive',
                         tauPlus=20, tauMinus=20,
                         wMax=1, wMin=0,
-                        aPlus=0.5, aMinus=0.5, weights=None):
+                        aPlus=0.5, aMinus=0.5, weights=None, initWeightDistr='gaussian'):
         # Maybe extend to save parameters of STDP Connection
         timingRule = p.SpikePairRule(tau_plus=tauPlus, tau_minus=tauMinus)
 
@@ -124,6 +150,7 @@ class NeuralNet(object):
         if weightMod == 'additive':
             weightRule = p.AdditiveWeightDependence(w_max=wMax, w_min=wMin, A_plus=aPlus, A_minus=aMinus)
         elif weightMod == 'multiplicative':
+            print "yooo multiplicative"
             weightRule = p.MultiplicativeWeightDependence(wMin, wMax, aPlus, aMinus)
         else:
             raise TypeError(str(weightMod) + " is not a known weight modification rule for STDP \n"
@@ -134,8 +161,14 @@ class NeuralNet(object):
 
         #SET UP WEIGHTS OF TH ENETWORK
         if weights is None: #if there are no weighs supplied create randomised weights
-            connections = createGaussianConnections(self.layers[pre][0].size, self.layers[post][0].size,
+            if initWeightDistr == 'gaussian':
+                connections = createGaussianConnections(self.layers[pre][0].size, self.layers[post][0].size,
                                                 initWeightMean, initWeightStd, delay)
+            elif initWeightDistr == 'uniform':
+                connections = createUniformConnections(self.layers[pre][0].size, self.layers[post][0].size,
+                                                       wMax, wMin, delay)
+            else:
+                print "Unknown distribution pattern for initial weights of STDP connections: " + str(initWeightDistr)
         else:#if weights are supplied set up STDP with those
             connections = createConnectionsFromWeights(weights)
 
@@ -164,6 +197,7 @@ class NeuralNet(object):
                     layer.pop.record_v()
 
         p.run(runTime)
+
 
 
     # ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -197,7 +231,7 @@ class NeuralNet(object):
                                       STDP_Params['weightRule'], STDP_Params['tauPlus'],
                                       STDP_Params['tauMinus'], STDP_Params['wMax'],
                                       STDP_Params['wMin'], STDP_Params['aPlus'], STDP_Params['aMinus'],
-                                      weights)
+                                      weights, STDP_Params['weightInit'])
 
 
         inhibitoryNr = self.connect(outputLayerNr, outputLayerNr,
@@ -343,7 +377,7 @@ def getTrainingDataFromDirectories(trainingDirectories, filter=None, iterations=
     return {'spikeTimes': spikeTimes, 'lastSpikeAt': finishesAt}
 
 
-def getTrainingData(inputlayerSize, sourceFile1, sourceFile2, iterations, timebetweenSamples, randomise=True):
+def getTrainingData(inputlayerSize, sourceFile1, sourceFile2, iterations, timebetweenSamples, randomise=False):
     aedata1 = f.readData(sourceFile1)
     aedata2 = f.readData(sourceFile2)
 
@@ -400,6 +434,41 @@ def createGaussianConnections(nrPreNeurons, nrPostNeurons, mean, stdev, delay=1)
             i += 1
 
     return connections
+
+def createGaussianWeights(nrPreNeurons, nrPostNeurons, mean, stdev):
+    nrWeights = nrPreNeurons * nrPostNeurons
+    weights = [[0] * nrPostNeurons] * nrPreNeurons
+
+    for ns in range(nrPreNeurons):
+        for nd in range(nrPostNeurons):
+            weight = abs(r.gauss(mean, stdev))
+            weights[ns][nd] = weight
+    return weights
+
+
+def createUniformConnections(nrPreNeurons, nrPostNeurons, wMax, wMin, delay=1):
+    nrConnections = nrPreNeurons * nrPostNeurons
+    connections = [0] * nrConnections
+
+    i = 0
+    for ns in range(nrPreNeurons):
+        for nd in range(nrPostNeurons):
+            weight = abs(r.uniform(wMin, wMax))
+            connections[i] = (ns, nd, weight, delay)
+            i += 1
+
+    return connections
+
+def createUniformWeights(nrPreNeurons, nrPostNeurons, wMax, wMin):
+    nrWeights = nrPreNeurons * nrPostNeurons
+    weights = [[0] * nrPostNeurons] * nrPreNeurons
+
+    for ns in range(nrPreNeurons):
+        for nd in range(nrPostNeurons):
+            weight = abs(r.uniform(wMax, wMin))
+            weights[ns][nd] = weight
+    return weights
+
 def createConnectionsFromWeights(weights, delay=1):
     nrConnections = len(weights) * len(weights[0])  #since all neurons have the same number of connections,
                                                     # it doesnt really matter which element we take
@@ -411,6 +480,18 @@ def createConnectionsFromWeights(weights, delay=1):
             connections[i] = (ns, nd, weight, delay)
             i += 1
     return connections
+
+def randomiseDelays(distr, connections, mean=0.5, std=0.15, wMax=1, wMin=0):
+    newconn = []
+    if distr == 'gaussian':
+            newconn = [(conn[0], conn[1], conn[2],abs(r.gauss(mean, std))) for conn in connections]
+    elif distr == 'uniform':
+        for conn in connections:
+            newconn = [(conn[0], conn[1], conn[2], abs(r.gauss(mean, std))) for conn in connections]
+    else:
+        raise ValueError("Unknown distribution for randomising delays: " + str(distr))
+
+    return newconn
 
 
 def orderRandomly(aedata1, aedata2, iterations):

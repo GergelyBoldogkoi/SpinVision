@@ -12,27 +12,27 @@ basePath = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/
 class networkControlTests(unittest.TestCase):
     neuronType = p.IF_curr_exp
     neuronParameters = {
-        'cm': 1.0,  # The capacitance of the LIF neuron in nano-Farads
-        'tau_m': 20.0,  # The time-constant of the RC circuit, in milliseconds
-        'tau_refrac': 2.0,  # The refractory period, in milliseconds
+        'cm': 12,  # The capacitance of the LIF neuron in nano-Farads
+        'tau_m': 110,  # The time-constant of the RC circuit, in milliseconds
+        'tau_refrac': 40,  # The refractory period, in milliseconds
         'v_reset': -70.0,  # The voltage to set the neuron at immediately after a spike
         'v_rest': -65,  # The ambient rest voltage of the neuron
         'v_thresh': -50,  # The threshold voltage at which the neuron will spike
         'tau_syn_E': 5.0,  # The excitatory input current decay time-constant
-        'tau_syn_I': 5.0,  # The inhibitory input current decay time-constant
+        'tau_syn_I': 10,  # The inhibitory input current decay time-constant
         'i_offset': 0.0  # A base input current to add each timestep
     }
     STDPParams = {
         'mean': 0.5,
         'std': 0.15,
         'delay': 1,
-        'weightRule': 'additive',
-        'tauPlus': 20,
-        'tauMinus': 20,
+        'weightRule': 'multiplicative',
+        'tauPlus': 50,
+        'tauMinus': 60,
         'wMax': 1,
         'wMin': 0,
-        'aPlus': 0.5,
-        'aMinus': 0.5
+        'aPlus': 0.05,
+        'aMinus': 0.05
     }
 
     def test_canTrainFromFile(self):
@@ -88,11 +88,6 @@ class networkControlTests(unittest.TestCase):
 
 
 
-    def test_canPlotEval(self):
-        untrainedSpikes = np.array([[0, 1], [1, 1], [2, 1]])
-        trainedSpikes = np.array([[0, 4], [1, 4], [2, 4]])
-
-        control.plotEval(untrainedSpikes, trainedSpikes)
 
     def test_canGetNetworkResponses(self):
         path = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/test/"
@@ -125,12 +120,18 @@ class networkControlTests(unittest.TestCase):
         files.append(path + "10xtestSampleLeft")
         files.append(path + "10xtestSampleRight")
         path = "/home/kavits/Project/SpinVision/SpinVision/resources/NetworkWeights/test/"
-        files.append(path + "testUntrained_1024x40")
+        files.append(path + "testUntrainedGaussian_1024x40")
         # this is not gonna plot, just there to see if an error is raised
-        weights = control.train(1024, 40, 2, files[0], files[1], plot=True, weightSource=files[2])
+        weights = control.train(1024, 40, 200, files[0], files[1], plot=True, weightSource=files[2])
 
+    def test_canPlotSpikes(self):
+        untrainedSpikes = np.array([[0, 1], [1, 1], [2, 1]])
+        trainedSpikes = np.array([[0, 4], [1, 4], [2, 4]])
 
+        control.plotSpikes(untrainedSpikes, trainedSpikes)
 
+    def test_can3DPlot(self):
+        control.plot2DWeightsOrdered([[0.1, 0.1, 0.8, 0.7], [0.1, 0.1, 0.765, 0]],[[0.512, 0.566, 0.466, 0.42, 0.61], [0.39, 0.543, 0.68]])
 
 
 
