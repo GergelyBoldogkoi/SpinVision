@@ -13,7 +13,12 @@ def trainWithWeightSource():
     path = "/home/kavits/Project/SpinVision/SpinVision/resources/NetworkWeights/test/"
     #files.append(path + "testUntrainedGaussian_1024x40")
     # this is not gonna plot, just there to see if an error is raised
-    weights = control.train(256, 16, 10, files[0], files[1], plot=True)#, weightSource=files[2])
+
+    print "neuronType: " + str(n.__neuronType__)
+    print "STDPParameters: " + str(n.__STDPParameters__)
+    print "Neuron Params: " + str(n.__neuronParameters__)
+
+    weights = control.train(60, 2, 200, files[0], files[0], plot=True)#, weightSource=files[2])
     print weights
 
 trainWithWeightSource()

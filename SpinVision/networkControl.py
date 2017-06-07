@@ -14,15 +14,17 @@ TIME_BETWEEN_ITERATIONS = 200
 ITERATIONS = 5
 RUNTIME_CONSTANT = 1
 MAX_ITERATIONS_FOR_TRAINING_RUN = 20  # Todo tune this number
-WMAX = 1
-WMIN = 0
-MEAN = 0.5
-STD = 0.15
+WMAX = 0.1 #n.__STDPParameters__['wMax']
+WMIN = n.__STDPParameters__['wMin']
+MEAN = n.__STDPParameters__['mean']
+STD = n.__STDPParameters__['std']
 
 
 # This function is an overarhching training method, calling the sub training methods multiple times
 # It is necessary, as SpiNNaker does not have enough memory to load a very long training file
 # so shorter versions of the training file are loaded onto the machine again and again, to achieve high iteration training
+
+
 
 
 
@@ -45,8 +47,17 @@ def train(inputSize, outputSize, iterations, source1, source2, weightSource=None
     weights = doTrainingIterations(iterations, source1, source2, weights)
 
     avgChange = getAvgChangeInWeights(untrainedWeights, weights)
+
     print " average change in weights: " + str(avgChange)
     print "that is a change of " + str(getAvgChangeInWeights(untrainedWeights, weights)*100) + '%'
+
+    weightDec = getDecreaseInWeights(untrainedWeights, weights)
+    print "Average decrease in weight: " + str(weightDec['avg'])
+    print "that is a decrease of " + str(weightDec['avg'] * 100) + '%'
+
+    print "Number of synapses that have decreased in weight: " + str(weightDec['nr'])
+    print "That means the percentage of synapses that decreased in weight is: " \
+           + str(float((float(weightDec['nr']) / (len(untrainedWeights) * len(untrainedWeights[0]))) * 100)) + "%"
 
     # print "UNTrained weights"
     # print untrainedWeights
@@ -221,6 +232,18 @@ def getAvgChangeInWeights(untrainedWeights, trainedWeights):
             change += abs(untrainedWeights[i][j] - trainedWeights[i][j])
     change = float(float(change)/ (len(untrainedWeights) * len(untrainedWeights[0])))
     return change
+
+
+def getDecreaseInWeights(untrainedWeights, trainedWeights):
+   nrOfDecreases = 0
+   avgDecrease = 0
+   for i in range(len(untrainedWeights)):
+       for j in range(len(untrainedWeights[0])):
+            if untrainedWeights[i][j] > trainedWeights[i][j]:
+               avgDecrease += untrainedWeights[i][j] - trainedWeights[i][j]
+               nrOfDecreases += 1
+   avgDecrease = float(float(avgDecrease) / (len(untrainedWeights) * len(untrainedWeights[0])))
+   return {'avg': avgDecrease, 'nr': nrOfDecreases}
 
 # //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #                               PLOTTING

@@ -6,12 +6,38 @@ import AEDAT_Handler as f
 import random as r
 import numpy as np
 
+
 Layer = namedtuple("Layer", "pop nType nParams")
 Connection = namedtuple("Connection", "proj pre post connectivity type")
 
 
 # inputFormat: layerDescriptors = [[pop L1, Neuron Type L1, Neuron Params L1],[Pop L2,...]...]
+__neuronParameters__ = {
+    'cm': 12,  # The capacitance of the LIF neuron in nano-Farads
+    'tau_m': 110,  # The time-constant of the RC circuit, in millisecon
+    'tau_refrac': 40.0,  # The refractory period, in milliseconds
+    'v_reset': -70.0,  # The voltage to set the neuron at immediately after a spike
+    'v_rest': -65,  # The ambient rest voltage of the neuron
+    'v_thresh': -61,  # The threshold voltage at which the neuron will spike
+    'tau_syn_E': 2.0,  # The excitatory input current decay time-constant
+    'tau_syn_I': 50.0,  # The inhibitory input current decay time-constant
+    'i_offset': 0.0  # A base input current to add each timestep
+}
+__neuronType__ = p.IF_curr_exp
 
+__STDPParameters__ = {
+    'mean': 0.5,
+    'std': 0.75,
+    'delay': 1,
+    'weightRule': 'multiplicative',
+    'tauPlus': 15,
+    'tauMinus': 30,
+    'wMax': 1,
+    'wMin': 0,
+    'aPlus': 0.2,
+    'aMinus': 0.25,
+    'weightInit': 'uniform'
+}
 
 
 class NeuralNet(object):
@@ -40,32 +66,7 @@ class NeuralNet(object):
     #     'aMinus': 0.05,
     #     'weightInit': 'uniform'
     # }
-    __neuronParameters__ = {
-        'cm': 12,  # The capacitance of the LIF neuron in nano-Farads
-        'tau_m': 110,  # The time-constant of the RC circuit, in millisecon
-        'tau_refrac': 40.0,  # The refractory period, in milliseconds
-        'v_reset': -70.0,  # The voltage to set the neuron at immediately after a spike
-        'v_rest': -65,  # The ambient rest voltage of the neuron
-        'v_thresh': -61,  # The threshold voltage at which the neuron will spike
-        'tau_syn_E': 2.0,  # The excitatory input current decay time-constant
-        'tau_syn_I': 10.0,  # The inhibitory input current decay time-constant
-        'i_offset': 0.0  # A base input current to add each timestep
-    }
-    __neuronType__ = p.IF_curr_exp
 
-    __STDPParameters__ = {
-        'mean': 0.5,
-        'std': 0.75,
-        'delay': 1,
-        'weightRule': 'multiplicative',
-        'tauPlus': 10,
-        'tauMinus': 15,
-        'wMax': 0.2,
-        'wMin': 0,
-        'aPlus': 0.1,
-        'aMinus': 0.1,
-        'weightInit': 'uniform'
-    }
 
     def __init__(self, timeStep=1):
         p.setup(timestep=timeStep)
@@ -221,9 +222,9 @@ class NeuralNet(object):
 
         inputLayerNr = self.addInputLayer(inputLayerSize, trainingSpikes)
 
-        outputLayerNr = self.addLayer(outpuLayerSize, self.__neuronType__, self.__neuronParameters__)
+        outputLayerNr = self.addLayer(outpuLayerSize, __neuronType__, __neuronParameters__)
 
-        STDP_Params = self.__STDPParameters__
+        STDP_Params = __STDPParameters__
         stdpNr = self.connectWithSTDP(inputLayerNr, outputLayerNr,
                                       STDP_Params['mean'], STDP_Params['std'], STDP_Params['delay'],
                                       STDP_Params['weightRule'], STDP_Params['tauPlus'],
@@ -246,7 +247,7 @@ class NeuralNet(object):
         nrOut = len(weights[0])
         nrIn = len(weights)
 
-        outputLayerNr = self.addLayer(nrOut, self.__neuronType__, self.__neuronParameters__)
+        outputLayerNr = self.addLayer(nrOut, __neuronType__, __neuronParameters__)
 
         bundle = getTrainingData(nrIn, source1, source2, 1, 100)
         evalSpikes = bundle['spikeTimes']

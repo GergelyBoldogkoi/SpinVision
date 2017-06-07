@@ -21,17 +21,16 @@ def truncateRecording(source, start,end, dest):
 # truncateRecording(basepath + "Pos3To5_lowAngle_16x16_denoised", 389753227, 391839810, basepath + "TrainingSamples/16x16/Pos3To5_lowAngle_16x16_denoised_Sample3")
 
 # traininDirs = []
-# traininDirs.append(basepath + "Pos3To1_lowAngle_denoised")
+# traininDirs.append(basepath + "TrainingSamples/16x16/")
 # destFile = basepath + "Pos3To1_lowAngle_16x16_denoised"
 #
+# #
+# # handler.downsample(traininDirs[0], destFile, 8)
 #
-# handler.downsample(traininDirs[0], destFile, 8)
-
-# handler.concatenate(traininDirs, 100000, filter="Sample", dest=destFile, save=False)
-# handler.speedUp(10, traininDirs[0] + "/Sample1", traininDirs[0] + "/10xSample1")
-# handler.speedUp(10, traininDirs[1] + "/Sample1", traininDirs[1] + "/10xSample1")
-
-# connections = n.createGaussianConnections(1024, 40, 0.5, 0.15)
+# handler.speedUp(2, traininDirs[0] + "Pos3To5_lowAngle_16x16_denoised_Sample1", traininDirs[0] + "/2xPos3To5_lowAngle_16x16_denoised_Sample1")
+# handler.speedUp(2, traininDirs[0] + "Pos3To1_lowAngle_16x16_denoised_Sample1", traininDirs[0] + "/2xPos3To1_lowAngle_16x16_denoised_Sample1")
+#
+# # connections = n.createGaussianConnections(1024, 40, 0.5, 0.15)
 # weights = [[] * 40] * 1024
 #
 # for i in range(1024):
