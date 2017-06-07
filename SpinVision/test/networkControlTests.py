@@ -130,8 +130,12 @@ class networkControlTests(unittest.TestCase):
 
         control.plotSpikes(untrainedSpikes, trainedSpikes)
 
-    def test_can3DPlot(self):
-        control.plot2DWeightsOrdered([[0.1, 0.1, 0.8, 0.7], [0.1, 0.1, 0.765, 0]],[[0.512, 0.566, 0.466, 0.42, 0.61], [0.39, 0.543, 0.68]])
+    def test_can2DPlot(self):
+        control.plot2DWeightsOrdered([[0.1, 0.1, 0.8, 0.7], [0.1, 0.1, 0.765, 0]],[[0.512, 0.566, 0.466, 0.42], [0.39, 0.543, 0.68, 0.01]])
 
+    def test_canGetChangeInWeights(self):
+        weights = [[1,2,3], [3,4,5]]
+        trained = [[2,2,2], [4,4,4]]
 
-
+        change = control.getAvgChangeInWeights(weights, trained)
+        self.assertEquals(float(4.0/6.0), change)

@@ -30,7 +30,11 @@ def readFile(filename):
 
     return aer
 
-#returns paer.aerdata in a legible format
+def saveData(data, destFile):
+    lib = paer.aefile("/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/habba.aedat")
+    lib.save(data, destFile + '.aedat', 'aedat')
+
+
 def extractData(data):
     niceData = {'X': data.x, 'Y': data.y, 't': data.t, 'ts': data.ts}
     return niceData
@@ -135,6 +139,72 @@ def filterMode(data, scale, exposureTime_ms=50):
     print len(data.x)
     print "newdata.x: " + str(data.x)
     return data
+
+def filterNoise(data, windowSize=2, threshold=4, exposureTime_ms=20):
+    # type: (paer.aedata, int) -> paer.aedata
+    #this function converts all events into ON events #TODO produce OFF as well
+
+    newTs = []
+    newX = []
+    newY = []
+    newT = []
+    exposureTime_us = exposureTime_ms * 1000
+
+    for i in range(len(data.ts)):
+
+
+        #find all events within plus-munus expTime
+        # compare their x,y values, then if there are more than 4 in a 4x4 window, produce an output spike.
+        eventCounter = 0
+        ONcounter = 0
+        OFFcounter = 0
+        #go down
+        j = i
+        while(j >= 0 and abs(data.ts[j] - data.ts[i]) < exposureTime_us ):
+            #ignore polarity of data for now
+            xdiff = abs(data.x[j] - data.x[i])
+            ydiff = abs(data.y[j] - data.y[i])
+            if xdiff <= windowSize and ydiff <= windowSize:
+                eventCounter += 1
+                if(data.t[j]):
+                    OFFcounter += 1
+                else:
+                    ONcounter += 1
+
+            j -= 1
+            
+        #go up
+        k = i + 1
+        while (k < len(data.ts) and abs(data.ts[k] - data.ts[i]) < exposureTime_us):
+            # ignore polarity of data for now
+            xdiff = abs(data.x[k] - data.x[i])
+            ydiff = abs(data.y[k] - data.y[i])
+            if xdiff <= windowSize and ydiff <= windowSize:
+                eventCounter += 1
+                if (data.t[k]):
+                    OFFcounter += 1
+                else:
+                    ONcounter += 1
+            k += 1
+
+        if eventCounter >= threshold:
+            newTs.append(data.ts[i])
+            newX.append(data.x[i])
+            newY.append(data.y[i])
+            if OFFcounter > ONcounter:
+                newT.append(1) # Add OFF event
+            else:
+                newT.append(0) # Add ON event
+
+    newData = paer.aedata()
+    newData.ts = np.array(newTs)
+    newData.x = np.array(newX)
+    newData.y = np.array(newY)
+    newData.t = np.array(newT)
+
+    return newData
+
+
 
 
 def speedUp(factor, sourceFile, destPath):

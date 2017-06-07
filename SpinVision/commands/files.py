@@ -13,17 +13,17 @@ def truncateRecording(source, start,end, dest):
 
 
 
-#truncateRecording(basepath + "Pos3To5_lowAngle", 374545004, 377171417, basepath + "Pos3To5_lowAngle_Sample1")
-# truncateRecording(basepath + "Pos3To5_lowAngle_32x32", 381759446, 385325434, basepath + "/TrainingSamples/Pos3To5_lowAngle_32x32/Sample2")
-# truncateRecording(basepath + "Pos3To5_lowAngle_32x32", 389753227, 391839810, basepath + "/TrainingSamples/Pos3To5_lowAngle_32x32/Sample3")
+# truncateRecording(basepath + "Pos3To1_lowAngle_16x16", 116915910, 118805148, basepath + "Pos3To1_lowAngle_16x16_Sample1")
+# truncateRecording(basepath + "Pos3To1_lowAngle_16x16", 124541359, 126442203, basepath + "Pos3To1_lowAngle_16x16_Sample2")
+# truncateRecording(basepath + "Pos3To1_lowAngle_16x16", 132288534, 134129110, basepath + "Pos3To1_lowAngle_16x16_Sample3")
 
-traininDirs = []
-traininDirs.append(basepath + "Pos3To5_lowAngle_Sample1")
-destFile = basepath + "Pos3To5_lowAngle_Sample1_filtered"
-
-source = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/test/"
-
-handler.readData(source + "10xtestSampleLeft")
+# traininDirs = []
+# traininDirs.append(basepath + "Pos3To5_lowAngle_Sample1")
+# destFile = basepath + "Pos3To5_lowAngle_Sample1_filtered"
+#
+# source = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/test/"
+#
+# handler.readData(source + "10xtestSampleLeft")
 
 # handler.modeDownsample(traininDirs[0], destFile)
 
@@ -42,3 +42,7 @@ handler.readData(source + "10xtestSampleLeft")
 # destFile = basepath + "1024x40_Gaussian"
 #
 # control.saveWeights(weights, destFile)
+#
+# data  = handler.readData(basepath + "Pos3To1_lowAngle")
+# data  = handler.filterNoise(data,2,8)
+# handler.saveData(data, basepath + "Pos3To1_lowAngle_denoised")

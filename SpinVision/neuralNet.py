@@ -4,7 +4,7 @@ import pylab
 from collections import namedtuple
 import AEDAT_Handler as f
 import random as r
-
+import numpy as np
 
 Layer = namedtuple("Layer", "pop nType nParams")
 Connection = namedtuple("Connection", "proj pre post connectivity type")
@@ -41,13 +41,13 @@ class NeuralNet(object):
     #     'weightInit': 'uniform'
     # }
     __neuronParameters__ = {
-        'cm': 1,  # The capacitance of the LIF neuron in nano-Farads
-        'tau_m': 20,  # The time-constant of the RC circuit, in millisecon
+        'cm': 12,  # The capacitance of the LIF neuron in nano-Farads
+        'tau_m': 110,  # The time-constant of the RC circuit, in millisecon
         'tau_refrac': 40.0,  # The refractory period, in milliseconds
         'v_reset': -70.0,  # The voltage to set the neuron at immediately after a spike
         'v_rest': -65,  # The ambient rest voltage of the neuron
         'v_thresh': -61,  # The threshold voltage at which the neuron will spike
-        'tau_syn_E': 5.0,  # The excitatory input current decay time-constant
+        'tau_syn_E': 2.0,  # The excitatory input current decay time-constant
         'tau_syn_I': 10.0,  # The inhibitory input current decay time-constant
         'i_offset': 0.0  # A base input current to add each timestep
     }
@@ -57,13 +57,13 @@ class NeuralNet(object):
         'mean': 0.5,
         'std': 0.75,
         'delay': 1,
-        'weightRule': 'additive',
-        'tauPlus': 20,
-        'tauMinus': 20,
-        'wMax': 1,
+        'weightRule': 'multiplicative',
+        'tauPlus': 10,
+        'tauMinus': 15,
+        'wMax': 0.2,
         'wMin': 0,
-        'aPlus': 0.5,
-        'aMinus': 0.5,
+        'aPlus': 0.1,
+        'aMinus': 0.1,
         'weightInit': 'uniform'
     }
 
@@ -137,11 +137,12 @@ class NeuralNet(object):
         self.connections.append(connection)
         return len(self.connections) - 1
 
-    def connectWithSTDP(self, pre, post,initWeightMean=0.5, initWeightStd=0.15, delay=1,
+    def connectWithSTDP(self, pre, post, initWeightMean=0.5, initWeightStd=0.15, delay=1,
                         weightMod='additive',
                         tauPlus=20, tauMinus=20,
                         wMax=1, wMin=0,
-                        aPlus=0.5, aMinus=0.5, weights=None, initWeightDistr='gaussian'):
+                        aPlus=0.05, aMinus=0.05, weights=None, initWeightDistr='gaussian'):
+
         # Maybe extend to save parameters of STDP Connection
         timingRule = p.SpikePairRule(tau_plus=tauPlus, tau_minus=tauMinus)
 
@@ -150,8 +151,7 @@ class NeuralNet(object):
         if weightMod == 'additive':
             weightRule = p.AdditiveWeightDependence(w_max=wMax, w_min=wMin, A_plus=aPlus, A_minus=aMinus)
         elif weightMod == 'multiplicative':
-            print "yooo multiplicative"
-            weightRule = p.MultiplicativeWeightDependence(wMin, wMax, aPlus, aMinus)
+            weightRule = p.MultiplicativeWeightDependence(w_min=wMin, w_max=wMax, A_plus=aPlus, A_minus=aMinus)
         else:
             raise TypeError(str(weightMod) + " is not a known weight modification rule for STDP \n"
                                              "try \'additive\' or \'multiplicative\'")
@@ -159,17 +159,19 @@ class NeuralNet(object):
 
         STDP_Model = p.STDPMechanism(timing_dependence=timingRule, weight_dependence=weightRule)
 
-        #SET UP WEIGHTS OF TH ENETWORK
-        if weights is None: #if there are no weighs supplied create randomised weights
+        # SET UP WEIGHTS OF TH ENETWORK
+        #weights enter fine up to here
+
+        if weights is None:  # if there are no weighs supplied create randomised weights
             if initWeightDistr == 'gaussian':
                 connections = createGaussianConnections(self.layers[pre][0].size, self.layers[post][0].size,
-                                                initWeightMean, initWeightStd, delay)
+                                                        initWeightMean, initWeightStd, delay)
             elif initWeightDistr == 'uniform':
                 connections = createUniformConnections(self.layers[pre][0].size, self.layers[post][0].size,
                                                        wMax, wMin, delay)
             else:
                 print "Unknown distribution pattern for initial weights of STDP connections: " + str(initWeightDistr)
-        else:#if weights are supplied set up STDP with those
+        else:  # if weights are supplied set up STDP with those
             connections = createConnectionsFromWeights(weights)
 
         connectivity = p.FromListConnector(connections)
@@ -198,8 +200,6 @@ class NeuralNet(object):
 
         p.run(runTime)
 
-
-
     # ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     #                           SETUPS
     # ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -208,9 +208,8 @@ class NeuralNet(object):
     # sets up 2 layers for training
     # when this function save, it is not going to save the actual training data, but the one that has been
     # iterated iterations times
-    def setUpForTraining(self, inputLayerSize, outpuLayerSize, source1, source2, timeBetweenSamples, iterations=1, weights=None):
-
-
+    def setUpForTraining(self, inputLayerSize, outpuLayerSize, source1, source2, timeBetweenSamples, iterations=1,
+                         weights=None):
 
         if (not len(self.layers) == 0) and (not len(self.connections) == 0):
             raise TypeError(
@@ -219,7 +218,6 @@ class NeuralNet(object):
         bundle = getTrainingData(inputLayerSize, source1, source2, iterations, timeBetweenSamples)
         lastSpike = bundle['lastSpikeAt']
         trainingSpikes = bundle['spikeTimes']
-
 
         inputLayerNr = self.addInputLayer(inputLayerSize, trainingSpikes)
 
@@ -233,16 +231,13 @@ class NeuralNet(object):
                                       STDP_Params['wMin'], STDP_Params['aPlus'], STDP_Params['aMinus'],
                                       weights, STDP_Params['weightInit'])
 
-
         inhibitoryNr = self.connect(outputLayerNr, outputLayerNr,
                                     connectivity=p.AllToAllConnector(weights=5, delays=STDP_Params['delay']),
                                     type='inhibitory')
 
-
         return {'inputLayer': inputLayerNr, 'outputLayer': outputLayerNr,
                 'inhibitoryConnection': inhibitoryNr, 'STDPConnection': stdpNr,
                 'lastSpikeAt': lastSpike}
-
 
     def setUpEvaluation(self, weights, source1, source2, delay=1):
         # len(weights[0]) returns how many output neurons there are,
@@ -264,12 +259,13 @@ class NeuralNet(object):
         self.annotations.append(source1)
         self.annotations.append(source2)
 
-        neuronConnections = [0] * nrIn*nrOut
+        neuronConnections = [0] * nrIn * nrOut
         for i in range(nrIn):
             for j in range(nrOut):
                 neuronConnections[i * nrOut + j] = (i, j, weights[i][j], delay)
 
-        connection = self.connect(inputLayerNr, outputLayerNr, p.FromListConnector(neuronConnections), type='excitatory')
+        connection = self.connect(inputLayerNr, outputLayerNr, p.FromListConnector(neuronConnections),
+                                  type='excitatory')
 
         return {'inputLayer': inputLayerNr, 'outputLayer': outputLayerNr,
                 'connection': connection, 'runTime': lastSpike}
@@ -314,7 +310,6 @@ class NeuralNet(object):
         return self.connections[connection][0].getWeights()
 
 
-
 # ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #                           DATA-HANDLING
 # ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -327,10 +322,8 @@ def readSpikes(aedata, timeBetweenIterations=0, ONOFF=False):
     sampleTimes_ms = []
     sampleEnd = None
 
-
-
     for sample in aedata:
-        sampleLength = (sample.ts[len(sample.ts) - 1] - sample.ts[0])/1000
+        sampleLength = (sample.ts[len(sample.ts) - 1] - sample.ts[0]) / 1000
         data = f.extractData(sample)
 
         for i in range(len(data['ts'])):
@@ -348,14 +341,13 @@ def readSpikes(aedata, timeBetweenIterations=0, ONOFF=False):
             if i + 1 < len(data['ts']):
                 spikeTime += data['ts'][i + 1] - data['ts'][i]  # set time of next spike
 
-
         sampleEnd = spikeTime / 1000
 
         sampleTimes_ms.append(sampleLength + timeBetweenIterations)
 
         spikeTime += timeBetweenIterations * 1000  # leave timeBetweenSamples time between samples
 
-    return {'data': organisedData, 'sampleTimes': sampleTimes_ms,  'lastSpikeAt': sampleEnd}
+    return {'data': organisedData, 'sampleTimes': sampleTimes_ms, 'lastSpikeAt': sampleEnd}
 
 
 # This function reads in spikes from all files in given directories
@@ -366,7 +358,7 @@ def getTrainingDataFromDirectories(trainingDirectories, filter=None, iterations=
 
     aedata = f.concatenate(trainingDirectories, timeBetweenSamples * 1000, filter, destFile, save)
 
-    cont = readSpikes([aedata],  timeBetweenIterations=timeBetweenSamples)
+    cont = readSpikes([aedata], timeBetweenIterations=timeBetweenSamples)
     data = cont['data']
     finishesAt = cont['lastSpikeAt']
     spikeTimes = []
@@ -388,7 +380,6 @@ def getTrainingData(inputlayerSize, sourceFile1, sourceFile2, iterations, timebe
         for i in range(iterations):
             ordering.append(aedata1)
             ordering.append(aedata2)
-
 
     cont = readSpikes(ordering, timebetweenSamples)
     data = cont['data']
@@ -415,9 +406,6 @@ def getTrainingData(inputlayerSize, sourceFile1, sourceFile2, iterations, timebe
     # win
 
 
-
-
-
 # ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #                           HELPER FUNCTIONS
 # ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -435,15 +423,9 @@ def createGaussianConnections(nrPreNeurons, nrPostNeurons, mean, stdev, delay=1)
 
     return connections
 
-def createGaussianWeights(nrPreNeurons, nrPostNeurons, mean, stdev):
-    nrWeights = nrPreNeurons * nrPostNeurons
-    weights = [[0] * nrPostNeurons] * nrPreNeurons
 
-    for ns in range(nrPreNeurons):
-        for nd in range(nrPostNeurons):
-            weight = abs(r.gauss(mean, stdev))
-            weights[ns][nd] = weight
-    return weights
+def createGaussianWeights(nrPreNeurons, nrPostNeurons, mean, stdev):
+    return np.random.normal(mean, stdev, (nrPreNeurons, nrPostNeurons))
 
 
 def createUniformConnections(nrPreNeurons, nrPostNeurons, wMax, wMin, delay=1):
@@ -459,32 +441,29 @@ def createUniformConnections(nrPreNeurons, nrPostNeurons, wMax, wMin, delay=1):
 
     return connections
 
-def createUniformWeights(nrPreNeurons, nrPostNeurons, wMax, wMin):
-    nrWeights = nrPreNeurons * nrPostNeurons
-    weights = [[0] * nrPostNeurons] * nrPreNeurons
 
-    for ns in range(nrPreNeurons):
-        for nd in range(nrPostNeurons):
-            weight = abs(r.uniform(wMax, wMin))
-            weights[ns][nd] = weight
-    return weights
+def createUniformWeights(nrPreNeurons, nrPostNeurons, wMax, wMin):
+    size = (nrPreNeurons, nrPostNeurons)
+    return np.random.uniform(wMin, wMax, size)
+
 
 def createConnectionsFromWeights(weights, delay=1):
-    nrConnections = len(weights) * len(weights[0])  #since all neurons have the same number of connections,
-                                                    # it doesnt really matter which element we take
+    nrConnections = len(weights) * len(weights[0])  # since all neurons have the same number of connections,
+    # it doesnt really matter which element we take
     connections = [0] * nrConnections
     i = 0
-    for ns in range(len(weights)): #for every source neuron
-        for nd in range(len(weights[0])): #for every dest neuron
+    for ns in range(len(weights)):  # for every source neuron
+        for nd in range(len(weights[0])):  # for every dest neuron
             weight = weights[ns][nd]
             connections[i] = (ns, nd, weight, delay)
             i += 1
     return connections
 
+
 def randomiseDelays(distr, connections, mean=0.5, std=0.15, wMax=1, wMin=0):
     newconn = []
     if distr == 'gaussian':
-            newconn = [(conn[0], conn[1], conn[2],abs(r.gauss(mean, std))) for conn in connections]
+        newconn = [(conn[0], conn[1], conn[2], abs(r.gauss(mean, std))) for conn in connections]
     elif distr == 'uniform':
         for conn in connections:
             newconn = [(conn[0], conn[1], conn[2], abs(r.gauss(mean, std))) for conn in connections]
@@ -512,18 +491,18 @@ def orderRandomly(aedata1, aedata2, iterations):
 
     return ordering
 
-# ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#                           EVALUATION
-# ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    # ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    #                           EVALUATION
+    # ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
 
-# def evaluate(sources, weights, delays=1):
-#     #todo input layer chold have fixed size
-#     #TODO test, write functions to save/load weights, figure out how to release spinnaker board
-#     with NeuralNet() as net:
-#         results = net.setUpEvaluation(weights, sources[0], sources[2], delays)
-#         runTime = results['runTime']
-#         net.run(runTime)
-#         net.plotSpikes(results['outputLayer'])
+    # def evaluate(sources, weights, delays=1):
+    #     #todo input layer chold have fixed size
+    #     #TODO test, write functions to save/load weights, figure out how to release spinnaker board
+    #     with NeuralNet() as net:
+    #         results = net.setUpEvaluation(weights, sources[0], sources[2], delays)
+    #         runTime = results['runTime']
+    #         net.run(runTime)
+    #         net.plotSpikes(results['outputLayer'])

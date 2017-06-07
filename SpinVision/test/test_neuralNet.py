@@ -115,7 +115,7 @@ class neuralNetTests(unittest.TestCase):
             Network.connect(pre, post, p.OneToOneConnector(weights=5, delays=1))
             Network.run(10)
             Network.sampleTimes = [{'start': 1, 'end': 2}]
-            Network.plotSpikes(post,block=False)
+            Network.plotSpikes(post, block=False)
 
     def test_canReadSpikes(self):
         Network = n.NeuralNet()
@@ -149,7 +149,6 @@ class neuralNetTests(unittest.TestCase):
         flattenedList.sort()
         self.assertEquals(flattenedList[0], startTime
                           , "check whether list actually starts from 0")
-
 
     def test_canGetTrainingDataFromDirectories(self):
         Network = n.NeuralNet()
@@ -188,21 +187,27 @@ class neuralNetTests(unittest.TestCase):
 
         self.assertEquals(nrSource * nrDest, len(connections))
 
-    def test_canRandomoseDelays(self):
-        wMax = 1
-        wMin = 0
-        nrSource = 100
-        nrDest = 100
-        connections = n.createUniformConnections(nrSource, nrDest, wMax, wMin)
+    def test_canCreateUniformWeights(self):
 
-        newConn = n.randomiseDelays('gaussian', connections)
-        self.assertEquals(len(connections), len(newConn))
+        weights = n.createUniformWeights(1024, 16, 1, 0)
 
-        newConn = n.randomiseDelays('uniform', connections)
-        self.assertEquals(len(connections), len(newConn))
+    # def test_canRandomoseDelays(self):
+    #     wMax = 1
+    #     wMin = 0
+    #     nrSource = 100
+    #     nrDest = 100
+    #     connections = n.createUniformConnections(nrSource, nrDest, wMax, wMin)
+    #     print "print yoo"
+    #     newConn = n.randomiseDelays('gaussian', connections)
+    #     print "print yoo"
+    #
+    #     self.assertEquals(len(connections), len(newConn))
+    #
+    #     newConn = n.randomiseDelays('uniform', connections)
+    #     self.assertEquals(len(connections), len(newConn))
 
     def test_canCreateConnectionsFromWeights(self):
-        weights = [[0,2,3],[5,6,7]]
+        weights = [[0, 2, 3], [5, 6, 7]]
 
         connections = n.createConnectionsFromWeights(weights)
 
@@ -226,7 +231,7 @@ class neuralNetTests(unittest.TestCase):
         files.append(path + "testSampleLeft")
         files.append(path + "testSampleRight")
 
-        returned = n.getTrainingData(1024,files[0], files[1], 2, 100)
+        returned = n.getTrainingData(1024, files[0], files[1], 2, 100)
         self.assertEquals(1024, len(returned['spikeTimes']))
         print returned['sampleTimes']
         # The tests here would really be the same as for readSpikes
@@ -241,6 +246,7 @@ class neuralNetTests(unittest.TestCase):
 
         hab = Network.setUpForTraining(1024, 40, files[0], files[1], 100,
                                        iterations=2)
+
     def test_canSetupWithWeights(self):
         with n.NeuralNet() as net:
             path = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/test/"
@@ -258,7 +264,7 @@ class neuralNetTests(unittest.TestCase):
             stw = net.connections[0].proj.getWeights(format='array')
             unrolledStW = [w for neuron in stw for w in neuron]
 
-            self.assertEquals(len(unrolledStW) ,len(unrolledWeights),
+            self.assertEquals(len(unrolledStW), len(unrolledWeights),
                               str(len(unrolledStW)) + " != " + str(len(unrolledWeights)) + " weights set incorrecty!")
 
     def test_canSetupEvaluation(self):
@@ -276,12 +282,10 @@ class neuralNetTests(unittest.TestCase):
             self.assertEquals(files[0], net.annotations[0], "annotations set in correct order")
             self.assertEquals(files[1], net.annotations[1], "annotations set in correct order")
 
-        # net.run(1)
-        #
-        # conWeights = net.connections[0].proj.getWeights(format='array')
-        #
-        #
-        #
-        # self.assertEquals(conWeights, weights) #Todo weights work correctly, but different type numbers are returned, find a way to compare them
-
-
+            # net.run(1)
+            #
+            # conWeights = net.connections[0].proj.getWeights(format='array')
+            #
+            #
+            #
+            # self.assertEquals(conWeights, weights) #Todo weights work correctly, but different type numbers are returned, find a way to compare them
