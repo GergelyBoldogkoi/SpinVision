@@ -34,8 +34,8 @@ __STDPParameters__ = {
     'tauMinus': 30,
     'wMax': 1,
     'wMin': 0,
-    'aPlus': 0.2,
-    'aMinus': 0.25,
+    'aPlus': 0.1,
+    'aMinus': 0.1,
     'weightInit': 'uniform'
 }
 
@@ -117,9 +117,16 @@ class NeuralNet(object):
         return len(self.layers) - 1
 
     # Adds a population with pre-determined spike-times to the Network
-    def addInputLayer(self, size, sourceSpikes):
-        pop = p.Population(size, p.SpikeSourceArray, {'spike_times': sourceSpikes})
-        layer = Layer(pop, p.SpikeSourceArray, {'spike_times': sourceSpikes})
+    def addInputLayer(self, size, sourceSpikes, startFromNeuron=0):
+        spikes = []
+        for i in range(startFromNeuron):
+            spikes.append([])
+
+        for i in range(0, len(sourceSpikes)):
+            spikes.append(sourceSpikes[i])
+
+        pop = p.Population(size, p.SpikeSourceArray, {'spike_times': spikes})
+        layer = Layer(pop, p.SpikeSourceArray, {'spike_times': spikes})
         self.layers.append(layer)
 
         return len(self.layers) - 1
@@ -210,7 +217,7 @@ class NeuralNet(object):
     # when this function save, it is not going to save the actual training data, but the one that has been
     # iterated iterations times
     def setUpForTraining(self, inputLayerSize, outpuLayerSize, source1, source2, timeBetweenSamples, iterations=1,
-                         weights=None):
+                         weights=None, startFromNeuron=0):
 
         if (not len(self.layers) == 0) and (not len(self.connections) == 0):
             raise TypeError(
@@ -220,7 +227,7 @@ class NeuralNet(object):
         lastSpike = bundle['lastSpikeAt']
         trainingSpikes = bundle['spikeTimes']
 
-        inputLayerNr = self.addInputLayer(inputLayerSize, trainingSpikes)
+        inputLayerNr = self.addInputLayer(inputLayerSize, trainingSpikes, startFromNeuron)
 
         outputLayerNr = self.addLayer(outpuLayerSize, __neuronType__, __neuronParameters__)
 
@@ -240,7 +247,7 @@ class NeuralNet(object):
                 'inhibitoryConnection': inhibitoryNr, 'STDPConnection': stdpNr,
                 'lastSpikeAt': lastSpike}
 
-    def setUpEvaluation(self, weights, source1, source2, delay=1):
+    def setUpEvaluation(self, weights, source1, source2, delay=1, startFromNeuron=0):
         # len(weights[0]) returns how many output neurons there are,
         # as all inputs are connected to all outputs, so it doesn't really matter
         # precisely which element of weights we take
@@ -254,7 +261,7 @@ class NeuralNet(object):
 
         lastSpike = bundle['lastSpikeAt']
 
-        inputLayerNr = self.addInputLayer(nrIn, evalSpikes)
+        inputLayerNr = self.addInputLayer(nrIn, evalSpikes, startFromNeuron)
 
         self.sampleTimes = bundle['sampleTimes']
         self.annotations.append(source1)

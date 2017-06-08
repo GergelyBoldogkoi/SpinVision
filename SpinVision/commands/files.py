@@ -10,23 +10,32 @@ def truncateRecording(source, start,end, dest):
     toTime_us = 118825756
 
     nicedata = handler.truncate(source, start,end,dest)
+    #
+    # , 116915910, 118805148, basepath + "Pos3-1_Sample1")
+    #  124541359, 126442203, basepath + "Pos3-1_Sample2")
+    #  132288534, 134129110, basepath + "Pos3-1_Sample3")
+    #
+    # 374545004, 377171417, basepath + "Pos3-5_Sample1")
+    # 381759446, 385325434, basepath + "Pos3-5_Sample2")
+    #  389753227, 391839810, basepath +"Pos3-5_Sample3")
 
 
-# truncateRecording(basepath + "Pos3To1_lowAngle_16x16_denoised", 116915910, 118805148, basepath + "TrainingSamples/16x16/Pos3To1_lowAngle_16x16_denoised_Sample1")
-# truncateRecording(basepath + "Pos3To1_lowAngle_16x16_denoised", 124541359, 126442203, basepath + "TrainingSamples/16x16/Pos3To1_lowAngle_16x16_denoised_Sample2")
-# truncateRecording(basepath + "Pos3To1_lowAngle_16x16_denoised", 132288534, 134129110, basepath + "TrainingSamples/16x16/Pos3To1_lowAngle_16x16_denoised_Sample3")
-
-# truncateRecording(basepath + "Pos3To5_lowAngle_16x16_denoised", 374545004, 377171417, basepath + "TrainingSamples/16x16/Pos3To5_lowAngle_16x16_denoised_Sample1")
-# truncateRecording(basepath + "Pos3To5_lowAngle_16x16_denoised", 381759446, 385325434, basepath + "TrainingSamples/16x16/Pos3To5_lowAngle_16x16_denoised_Sample2")
-# truncateRecording(basepath + "Pos3To5_lowAngle_16x16_denoised", 389753227, 391839810, basepath + "TrainingSamples/16x16/Pos3To5_lowAngle_16x16_denoised_Sample3")
+# truncateRecording(basepath + "Pos1-1", 192126147, 194206124, basepath + "Pos1-1_Sample1")
+# truncateRecording(basepath + "Pos1-1", 194436240, 196275918, basepath + "Pos1-1_Sample2")
+# truncateRecording(basepath + "Pos1-1", 196284571, 198508865, basepath + "Pos1-1_Sample3")
+#
+# truncateRecording(basepath + "Pos5-5", 268816788, 270656797, basepath + "Pos5-5_Sample1")
+# truncateRecording(basepath + "Pos5-5", 270955460, 272795535, basepath + "Pos5-5_Sample2")
+# truncateRecording(basepath + "Pos5-5", 273136841, 274977143, basepath + "Pos5-5_Sample3")
 
 # traininDirs = []
 # traininDirs.append(basepath + "TrainingSamples/16x16/")
 # destFile = basepath + "Pos3To1_lowAngle_16x16_denoised"
 #
 # #
-# # handler.downsample(traininDirs[0], destFile, 8)
-#
+# path = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/"
+# handler.downsample(path + "Pos1-1_Sample1_denoised", path + "Pos1-1_Sample1_denoised_32x32", 4)
+
 # handler.speedUp(2, traininDirs[0] + "Pos3To5_lowAngle_16x16_denoised_Sample1", traininDirs[0] + "/2xPos3To5_lowAngle_16x16_denoised_Sample1")
 # handler.speedUp(2, traininDirs[0] + "Pos3To1_lowAngle_16x16_denoised_Sample1", traininDirs[0] + "/2xPos3To1_lowAngle_16x16_denoised_Sample1")
 #
@@ -40,7 +49,4 @@ def truncateRecording(source, start,end, dest):
 # destFile = basepath + "1024x40_Gaussian"
 #
 # control.saveWeights(weights, destFile)
-#
-# data  = handler.readData(basepath + "Pos3To1_lowAngle")
-# data  = handler.filterNoise(data,2,8)
-# handler.saveData(data, basepath + "Pos3To1_lowAngle_denoised")
+# #? basepath + "Pos5-5_Sample2_denoised")

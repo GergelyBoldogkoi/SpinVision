@@ -10,10 +10,10 @@ import pyNN.spiNNaker as p
 import plotly.plotly as py
 import plotly.graph_objs as go
 
-TIME_BETWEEN_ITERATIONS = 200
+TIME_BETWEEN_ITERATIONS = 500
 ITERATIONS = 5
 RUNTIME_CONSTANT = 1
-MAX_ITERATIONS_FOR_TRAINING_RUN = 20  # Todo tune this number
+MAX_ITERATIONS_FOR_TRAINING_RUN = 25  # Todo tune this number
 WMAX = 0.1 #n.__STDPParameters__['wMax']
 WMIN = n.__STDPParameters__['wMin']
 MEAN = n.__STDPParameters__['mean']
@@ -26,11 +26,9 @@ STD = n.__STDPParameters__['std']
 
 
 
-
-
-def train(inputSize, outputSize, iterations, source1, source2, weightSource=None, weightDistr='uniform', save=False, destFile=None,
-          plot=False):
-    weights = None
+def trainTrajectories(inputSize, outputSize, iterations, source1, source2, weightSource=None, weightDistr='uniform', save=False, destFile=None,
+                      plot=False, weights=None):
+    #TODO refactor to only take 1 source argument
     untrainedWeights = None
 
     # If we want to train from scratch (e.g. no good initial weights we can use)
@@ -43,42 +41,31 @@ def train(inputSize, outputSize, iterations, source1, source2, weightSource=None
     else:
         weights = loadWeights(weightSource)
 
+    print "Trained first trajectory"
     untrainedWeights = weights
-    weights = doTrainingIterations(iterations, source1, source2, weights)
 
-    avgChange = getAvgChangeInWeights(untrainedWeights, weights)
+    weights = doTrainingIterations(iterations, source1, source1, weights)
 
-    print " average change in weights: " + str(avgChange)
-    print "that is a change of " + str(getAvgChangeInWeights(untrainedWeights, weights)*100) + '%'
+    nrNeuronsUsed = countNeurons(source1)
 
-    weightDec = getDecreaseInWeights(untrainedWeights, weights)
-    print "Average decrease in weight: " + str(weightDec['avg'])
-    print "that is a decrease of " + str(weightDec['avg'] * 100) + '%'
+    firstWeights = weights
 
-    print "Number of synapses that have decreased in weight: " + str(weightDec['nr'])
-    print "That means the percentage of synapses that decreased in weight is: " \
-           + str(float((float(weightDec['nr']) / (len(untrainedWeights) * len(untrainedWeights[0]))) * 100)) + "%"
+    weights = doTrainingIterations(iterations, source2, source2, weights, startFromNeuron=nrNeuronsUsed)
 
-    # print "UNTrained weights"
-    # print untrainedWeights
-    # print "Trained weights"
-    # print weights
-    maxweight = max(w for neuron in weights for w in neuron)
-    print "Max weight: " + str(maxweight)
+    displayInfo(plot, source1, source1, untrainedWeights, firstWeights)
+
+    print "Trained second trajectory"
+    displayInfo(plot, source2, source2, untrainedWeights, weights, startFromNeuron=nrNeuronsUsed)
     if save:
         saveWeights(weights, destFile)
-
-    if plot and untrainedWeights is not None:
-        #plot weights
-        plot2DWeightsOrdered(untrainedWeights, weights, plot)
-        plotWeightHeatmap(untrainedWeights, weights, plot)
-        #plot spikes
-        getNetworkResponses(untrainedWeights, weights, source1, source1, plot)
 
     return weights
 
 
-def doTrainingIterations(iterations, source1, source2, weights):
+
+
+
+def doTrainingIterations(iterations, source1, source2, weights, startFromNeuron=0):
 
     nrLargeIterations = math.ceil(float(iterations) / float(MAX_ITERATIONS_FOR_TRAINING_RUN))
 
@@ -97,7 +84,7 @@ def doTrainingIterations(iterations, source1, source2, weights):
         if iterations - currentIter <= 0:
             currentIter = iterations
 
-        netWorkData = trainWithWeights(weights, currentIter, source1, source2)
+        netWorkData = trainWithWeights(weights, currentIter, source1, source2, startFromNeuron=startFromNeuron)
         iterations -= currentIter
         weights = netWorkData['trainedWeights']
         # print " weights in iteration " + str(counter)
@@ -107,12 +94,12 @@ def doTrainingIterations(iterations, source1, source2, weights):
     return weights
 
 
-def trainFromFile(inputLayerSize, outputLayerSize, iterations, timeBetweenSamples, source1, source2, plot=False):
+def trainFromFile(inputLayerSize, outputLayerSize, iterations, timeBetweenSamples, source1, source2, plot=False, startFromNeuron=0):
     #with n.NeuralNet() as net:
     net = n.NeuralNet()
     networkData = net.setUpForTraining(inputLayerSize, outpuLayerSize=outputLayerSize, source1=source1,
                                        source2=source2, timeBetweenSamples=timeBetweenSamples,
-                                       iterations=iterations)
+                                       iterations=iterations, startFromNeuron=startFromNeuron)
 
     runTime = int(networkData['lastSpikeAt'] + 10) / RUNTIME_CONSTANT
     print "runtime: " + str(runTime)
@@ -130,7 +117,7 @@ def trainFromFile(inputLayerSize, outputLayerSize, iterations, timeBetweenSample
             'trainedWeights': weights}
 
 
-def trainWithWeights(weights, iterations, source1, source2, plot=False):
+def trainWithWeights(weights, iterations, source1, source2, plot=False, startFromNeuron=0):
     out = None
 
 
@@ -141,7 +128,7 @@ def trainWithWeights(weights, iterations, source1, source2, plot=False):
     networkData = net.setUpForTraining(inputLayerSize, outPutLayerSize,
                                        source1=source1, source2=source2,
                                        timeBetweenSamples=TIME_BETWEEN_ITERATIONS, iterations=iterations,
-                                       weights=weights)
+                                       weights=weights, startFromNeuron=startFromNeuron)
 
     runTime = int(networkData['lastSpikeAt'] + 10) / RUNTIME_CONSTANT
     # print "weights before trainin"
@@ -164,6 +151,7 @@ def trainWithWeights(weights, iterations, source1, source2, plot=False):
 
 
 def evaluate(stimulusSource1, stimulusSource2, unWeightSource, tWeightSource, plotResponse=False):
+    #TOdo fix by shifting neural connections for second training
     untrainedWeigts = loadWeights(unWeightSource)
     trainedWeights = loadWeights(tWeightSource)
 
@@ -175,13 +163,13 @@ def evaluate(stimulusSource1, stimulusSource2, unWeightSource, tWeightSource, pl
 
 # This function creates an untrained and a trained network, gets their responses to stimuli
 # located in source1 and source 2
-def getNetworkResponses(untrainedWeights, trainedWeights, source1, source2, plot=False):
+def getNetworkResponses(untrainedWeights, trainedWeights, source1, source2, plot=False, startFromNeuron=0):
     untrainedSpikes = []
     trainedSpikes = []
     # with n.NeuralNet() as untrainedNet:
     untrainedNet = n.NeuralNet()
     # set up network
-    untrainedData = untrainedNet.setUpEvaluation(untrainedWeights, source1, source2)
+    untrainedData = untrainedNet.setUpEvaluation(untrainedWeights, source1, source2, startFromNeuron=startFromNeuron)
     # evaluate
     out = untrainedData['outputLayer']
     runTime = untrainedData['runTime'] / RUNTIME_CONSTANT
@@ -192,7 +180,7 @@ def getNetworkResponses(untrainedWeights, trainedWeights, source1, source2, plot
     p.end()
     # with n.NeuralNet() as trainedNet:
     trainedNet = n.NeuralNet()
-    trainedData = trainedNet.setUpEvaluation(trainedWeights, source1, source2)
+    trainedData = trainedNet.setUpEvaluation(trainedWeights, source1, source2, startFromNeuron=startFromNeuron)
     out = trainedData['outputLayer']
     runTime = trainedData['runTime'] / RUNTIME_CONSTANT
     trainedNet.run(runTime)
@@ -336,3 +324,46 @@ def printWeights(weights):
     for i in range(len(weights)):
         print "Source: " + str(i)
         print weights[i]
+
+def displayInfo(plot, source1, source2,  untrainedWeights, weights, startFromNeuron=0):
+    avgChange = getAvgChangeInWeights(untrainedWeights, weights)
+    print " average change in weights: " + str(avgChange)
+    print "that is a change of " + str(getAvgChangeInWeights(untrainedWeights, weights) * 100) + '%'
+    weightDec = getDecreaseInWeights(untrainedWeights, weights)
+    print "Average decrease in weight: " + str(weightDec['avg'])
+    print "that is a decrease of " + str(weightDec['avg'] * 100) + '%'
+    print "Number of synapses that have decreased in weight: " + str(weightDec['nr'])
+    print "That means the percentage of synapses that decreased in weight is: " \
+          + str(float((float(weightDec['nr']) / (len(untrainedWeights) * len(untrainedWeights[0]))) * 100)) + "%"
+    # print "UNTrained weights"
+    # print untrainedWeights
+    # print "Trained weights"
+    # print weights
+    maxweight = max(w for neuron in weights for w in neuron)
+    print "Max weight: " + str(maxweight)
+    if plot and untrainedWeights is not None:
+        # plot weights
+        plot2DWeightsOrdered(untrainedWeights, weights, plot)
+        plotWeightHeatmap(untrainedWeights, weights, plot)
+        # plot spikes
+        getNetworkResponses(untrainedWeights, weights, source1, source2, plot, startFromNeuron=startFromNeuron)
+
+# //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#                               Helper Functions
+# //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+# this function is used to count the number of neurons activated by a certain recording.
+# It will be used in taining to ensure that for the recordings after the first, not the same neurons are trained.
+# WARNING! if source is given, data will be ignored
+def countNeurons(source=None, data=None):
+    if source is not None:
+        data = f.readData(source)
+
+    neurons = []
+    for i in range(len(data.x)):
+        x = data.x[i]
+        y = data.y[i]
+        if (x, y) not in neurons:
+             neurons.append((x, y))
+
+    return len(neurons)

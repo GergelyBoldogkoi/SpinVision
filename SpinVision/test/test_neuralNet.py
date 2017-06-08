@@ -58,12 +58,12 @@ class neuralNetTests(unittest.TestCase):
 
     def test_canAddInputLayer(self):
         Network = n.NeuralNet()
-        layerId = Network.addInputLayer(2, [[0, 1], [0, 3]])
+        layerId = Network.addInputLayer(2, [[0, 1], [0, 3]], 5)
 
         assert 0 == layerId
         assert 1 == len(Network.layers)
         assert p.SpikeSourceArray == Network.layers[0].nType
-        assert 2 == len(Network.layers[0].nParams.get('spike_times'))
+        self.assertEquals(7 , len(Network.layers[0].nParams.get('spike_times')))
 
     def test_canConnectLayers(self):
         Network = n.NeuralNet()

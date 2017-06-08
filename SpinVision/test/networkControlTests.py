@@ -5,6 +5,7 @@ import SpinVision.AEDAT_Handler as f
 import SpinVision.networkControl as control
 import os
 import numpy as np
+import paer
 
 basePath = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/test/"
 
@@ -122,7 +123,7 @@ class networkControlTests(unittest.TestCase):
         path = "/home/kavits/Project/SpinVision/SpinVision/resources/NetworkWeights/test/"
         files.append(path + "testUntrainedGaussian_1024x40")
         # this is not gonna plot, just there to see if an error is raised
-        weights = control.train(1024, 40, 200, files[0], files[1], plot=True, weightSource=files[2])
+        weights = control.trainTrajectories(1024, 40, 200, files[0], files[1], plot=True, weightSource=files[2])
 
     def test_canPlotSpikes(self):
         untrainedSpikes = np.array([[0, 1], [1, 1], [2, 1]])
@@ -139,3 +140,14 @@ class networkControlTests(unittest.TestCase):
 
         change = control.getAvgChangeInWeights(weights, trained)
         self.assertEquals(float(4.0/6.0), change)
+
+    def test_canCountNeurons(self):
+
+        data = paer.aedata()
+
+        data.x = np.array([1,2,3,4,1,1])
+        data.y = np.array([1,2,3,4,2,1])
+
+        nrNeurons = control.countNeurons(data=data)
+
+        self.assertEquals(5, nrNeurons)
