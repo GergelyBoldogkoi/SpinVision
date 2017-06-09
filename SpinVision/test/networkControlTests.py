@@ -44,13 +44,12 @@ class networkControlTests(unittest.TestCase):
 
         weightPath = "/home/kavits/Project/SpinVision/SpinVision/resources/NetworkWeights/test/"
 
-
-        out2 = control.trainFromFile(1024, 40, 1, 100, files[0], files[1])
+        out2 = control.train_TrajectoriesFromFile(1024, 40, 1, 100, [files[0], files[1]])
 
         print out2['trainedWeights']
-        print len(out2['trainedWeights'] )
+        print len(out2['trainedWeights'])
 
-        #control.saveWeights(out2['trainedWeights'], weightPath + "fullNetworkWeights")
+        # control.saveWeights(out2['trainedWeights'], weightPath + "fullNetworkWeights")
 
     def test_canTrainWithWeights(self):
         path = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/test/"
@@ -59,11 +58,11 @@ class networkControlTests(unittest.TestCase):
         files.append(path + "10xtestSampleRight")
 
         weightPath = "/home/kavits/Project/SpinVision/SpinVision/resources/NetworkWeights/test/"
-        sourceFile = weightPath + "fullNetworkWeights"
+        sourceFile = weightPath + "fullNetworkWeights_additiveGaussian"
 
         weights = control.loadWeights(sourceFile)
 
-        out = control.trainWithWeights(weights, 2, files[0], files[1], plot=True)
+        out = control.train_TrajectoriesWithWeights(weights, 2, [files[0], files[1]], plot=True)
         trainedWeights = out['trainedWeights']
         unrolledWeights = [w for neuron in weights for w in neuron]
         flatTrainedWeights = [w for neuron in trainedWeights for w in neuron]
@@ -87,9 +86,6 @@ class networkControlTests(unittest.TestCase):
 
         os.remove(files[0])
 
-
-
-
     def test_canGetNetworkResponses(self):
         path = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/test/"
         files = []
@@ -98,10 +94,10 @@ class networkControlTests(unittest.TestCase):
 
         path = "/home/kavits/Project/SpinVision/SpinVision/resources/NetworkWeights/test/"
 
-        unTrainedWeights = control.loadWeights(path + "testUntrained_1024x40")
-        trainedWeights = control.loadWeights(path + "fullNetworkWeights")
+        unTrainedWeights = control.loadWeights(path + "testUntrainedGaussian_1024x40")
+        trainedWeights = control.loadWeights(path + "fullNetworkWeights_additiveGaussian")
 
-        control.getNetworkResponses(unTrainedWeights, trainedWeights, files[0], files[1])
+        control.get2LayerNetworkResponses(unTrainedWeights, trainedWeights, [files[0], files[1]])
 
     def test_canEvaluate(self):
         path = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/test/"
@@ -123,7 +119,7 @@ class networkControlTests(unittest.TestCase):
         path = "/home/kavits/Project/SpinVision/SpinVision/resources/NetworkWeights/test/"
         files.append(path + "testUntrainedGaussian_1024x40")
         # this is not gonna plot, just there to see if an error is raised
-        weights = control.trainTrajectories(1024, 40, 200, files[0], files[1], plot=True, weightSource=files[2])
+        weights = control.train_Trajectories(1024, 40, 2, [files[0], files[1]], plot=True, weightSource=files[2])
 
     def test_canPlotSpikes(self):
         untrainedSpikes = np.array([[0, 1], [1, 1], [2, 1]])
@@ -131,23 +127,77 @@ class networkControlTests(unittest.TestCase):
 
         control.plotSpikes(untrainedSpikes, trainedSpikes)
 
+        control.plotSpikes([],[])
+
     def test_can2DPlot(self):
-        control.plot2DWeightsOrdered([[0.1, 0.1, 0.8, 0.7], [0.1, 0.1, 0.765, 0]],[[0.512, 0.566, 0.466, 0.42], [0.39, 0.543, 0.68, 0.01]])
+        control.plot2DWeightsOrdered([[0.1, 0.1, 0.8, 0.7], [0.1, 0.1, 0.765, 0]],
+                                     [[0.512, 0.566, 0.466, 0.42], [0.39, 0.543, 0.68, 0.01]])
 
     def test_canGetChangeInWeights(self):
-        weights = [[1,2,3], [3,4,5]]
-        trained = [[2,2,2], [4,4,4]]
+        weights = [[1, 2, 3], [3, 4, 5]]
+        trained = [[2, 2, 2], [4, 4, 4]]
 
         change = control.getAvgChangeInWeights(weights, trained)
-        self.assertEquals(float(4.0/6.0), change)
+        self.assertEquals(float(4.0 / 6.0), change)
 
     def test_canCountNeurons(self):
-
         data = paer.aedata()
 
-        data.x = np.array([1,2,3,4,1,1])
-        data.y = np.array([1,2,3,4,2,1])
+        data.x = np.array([1, 2, 3, 4, 1, 1])
+        data.y = np.array([1, 2, 3, 4, 2, 1])
 
         nrNeurons = control.countNeurons(data=data)
 
         self.assertEquals(5, nrNeurons)
+
+    def test_findMostSpikingNeuron(self):
+            spikes = [[0,2],[], [0,1,2,3]]
+
+            nid = control.findMostSpikingNeuron(spikes)
+
+            self.assertEquals(2, nid)
+
+    def test_canPairInputsWithNeurons(self):
+        path = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/TrainingSamples/"
+        files = []
+        files.append(path + "Pos1-1_Sample1_denoised_32x32")  # These WORK!!
+        files.append(path + "Pos5-5_Sample2_denoised_32x32")
+        path2 = "/home/kavits/Project/SpinVision/SpinVision/resources/NetworkWeights/"
+        files.append(path2 + "1024x10_20iter_2traj")
+
+        weights = control.loadWeights(files[2])
+        sources = [files[0], files[1]]
+
+        pairings = control.pairInputsWithNeurons(sources, weights)
+
+        print pairings
+
+        self.assertEquals(0, pairings[path + "Pos1-1_Sample1_denoised_32x32"])
+        self.assertEquals(1, pairings[path + "Pos5-5_Sample2_denoised_32x32"])
+
+    def test_canTrainEndPositions(self):
+        #TODO improve tests
+        nrEndPositions = 2
+
+        path = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/TrainingSamples/"
+        files = []
+        files.append(path + "Pos1-1_Sample1_denoised_32x32")  # These WORK!!
+        files.append(path + "Pos5-5_Sample2_denoised_32x32")
+        path2 = "/home/kavits/Project/SpinVision/SpinVision/resources/NetworkWeights/"
+        files.append(path2 + "1024x10_20iter_2traj")
+
+        weights = control.loadWeights(files[2])
+
+        net = control.train_endPositions(2, [files[0], files[1]], weights)
+
+        self.assertEquals(2, len(net.layers))
+        self.assertEquals(1, len(net.connections))
+
+
+
+
+
+
+
+
+

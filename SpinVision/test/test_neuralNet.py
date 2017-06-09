@@ -108,14 +108,7 @@ class neuralNetTests(unittest.TestCase):
         assert lID2 == Network.connections[c].post
         assert 'STDP' == Network.connections[c].type
 
-    def test_canPlotSpikes(self):
-        with n.NeuralNet() as Network:
-            pre = Network.addInputLayer(3, [[0, 2], [1, 3], [0]])
-            post = Network.addBasicLayer(3)
-            Network.connect(pre, post, p.OneToOneConnector(weights=5, delays=1))
-            Network.run(10)
-            Network.sampleTimes = [{'start': 1, 'end': 2}]
-            Network.plotSpikes(post, block=False)
+
 
     def test_canReadSpikes(self):
         Network = n.NeuralNet()
@@ -231,10 +224,17 @@ class neuralNetTests(unittest.TestCase):
         files.append(path + "testSampleLeft")
         files.append(path + "testSampleRight")
 
-        returned = n.getTrainingData(1024, files[0], files[1], 2, 100)
-        self.assertEquals(1024, len(returned['spikeTimes']))
+        returned = n.getTrainingData(16384, [files[0], files[1]], 2, 100)
+        self.assertEquals(16384, len(returned['spikeTimes']))
         print returned['sampleTimes']
         # The tests here would really be the same as for readSpikes
+
+        # spikeTimes=[]
+        # layerWidth = 4
+        # for x in range(layerWidth):
+        #     for y in range(layerWidth):
+        #         spikeTimes.append([])
+        # print spikeTimes
 
     def test_canSetupForInitialTraining(self):
         Network = n.NeuralNet()
@@ -244,8 +244,8 @@ class neuralNetTests(unittest.TestCase):
         files.append(path + "testSampleLeft")
         files.append(path + "testSampleRight")
 
-        hab = Network.setUpForTraining(1024, 40, files[0], files[1], 100,
-                                       iterations=2)
+        hab = Network.setUp2LayersForTraining(16384, 40, [files[0], files[1]], 100,
+                                              iterations=2)
 
     def test_canSetupWithWeights(self):
         with n.NeuralNet() as net:
@@ -257,7 +257,7 @@ class neuralNetTests(unittest.TestCase):
 
             weights = [[0., 1., 2.], [3., 4., 5.]]
 
-            data = net.setUpTrainingWithWeights(weights, files[0], files[1])
+            data = net.setUpTrainingWithWeights(weights, [files[0], files[1]])
             net.run(10)
 
             unrolledWeights = [w for neuron in weights for w in neuron]
@@ -277,7 +277,7 @@ class neuralNetTests(unittest.TestCase):
 
             weights = [[0., 1., 2.], [3., 4., 5.]]
 
-            data = net.setUpEvaluation(weights, files[0], files[1])
+            data = net.setUp2LayerEvaluation(weights, files[0], files[1])
 
             self.assertEquals(files[0], net.annotations[0], "annotations set in correct order")
             self.assertEquals(files[1], net.annotations[1], "annotations set in correct order")
@@ -289,3 +289,5 @@ class neuralNetTests(unittest.TestCase):
             #
             #
             # self.assertEquals(conWeights, weights) #Todo weights work correctly, but different type numbers are returned, find a way to compare them
+
+

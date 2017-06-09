@@ -5,6 +5,7 @@ from collections import namedtuple
 import AEDAT_Handler as f
 import random as r
 import numpy as np
+import math
 
 
 Layer = namedtuple("Layer", "pop nType nParams")
@@ -117,11 +118,8 @@ class NeuralNet(object):
         return len(self.layers) - 1
 
     # Adds a population with pre-determined spike-times to the Network
-    def addInputLayer(self, size, sourceSpikes, startFromNeuron=0):
+    def addInputLayer(self, size, sourceSpikes):
         spikes = []
-        for i in range(startFromNeuron):
-            spikes.append([])
-
         for i in range(0, len(sourceSpikes)):
             spikes.append(sourceSpikes[i])
 
@@ -216,18 +214,18 @@ class NeuralNet(object):
     # sets up 2 layers for training
     # when this function save, it is not going to save the actual training data, but the one that has been
     # iterated iterations times
-    def setUpForTraining(self, inputLayerSize, outpuLayerSize, source1, source2, timeBetweenSamples, iterations=1,
-                         weights=None, startFromNeuron=0):
+    def setUp2LayersForTraining(self, inputLayerSize, outpuLayerSize, sources, timeBetweenSamples, iterations=1,
+                                weights=None):
 
         if (not len(self.layers) == 0) and (not len(self.connections) == 0):
             raise TypeError(
                 "Network has already been initialized, please ensure to call this function on an uninitialized network")
 
-        bundle = getTrainingData(inputLayerSize, source1, source2, iterations, timeBetweenSamples)
+        bundle = getTrainingData(inputLayerSize, sources, iterations, timeBetweenSamples)
         lastSpike = bundle['lastSpikeAt']
         trainingSpikes = bundle['spikeTimes']
 
-        inputLayerNr = self.addInputLayer(inputLayerSize, trainingSpikes, startFromNeuron)
+        inputLayerNr = self.addInputLayer(inputLayerSize, trainingSpikes)
 
         outputLayerNr = self.addLayer(outpuLayerSize, __neuronType__, __neuronParameters__)
 
@@ -247,7 +245,7 @@ class NeuralNet(object):
                 'inhibitoryConnection': inhibitoryNr, 'STDPConnection': stdpNr,
                 'lastSpikeAt': lastSpike}
 
-    def setUpEvaluation(self, weights, source1, source2, delay=1, startFromNeuron=0):
+    def setUp2LayerEvaluation(self, weights, sources, delay=1, startFromNeuron=0):
         # len(weights[0]) returns how many output neurons there are,
         # as all inputs are connected to all outputs, so it doesn't really matter
         # precisely which element of weights we take
@@ -256,16 +254,14 @@ class NeuralNet(object):
 
         outputLayerNr = self.addLayer(nrOut, __neuronType__, __neuronParameters__)
 
-        bundle = getTrainingData(nrIn, source1, source2, 1, 100)
+        bundle = getTrainingData(nrIn, sources, 1, 100)
         evalSpikes = bundle['spikeTimes']
 
         lastSpike = bundle['lastSpikeAt']
 
-        inputLayerNr = self.addInputLayer(nrIn, evalSpikes, startFromNeuron)
+        inputLayerNr = self.addInputLayer(nrIn, evalSpikes)
 
         self.sampleTimes = bundle['sampleTimes']
-        self.annotations.append(source1)
-        self.annotations.append(source2)
 
         neuronConnections = [0] * nrIn * nrOut
         for i in range(nrIn):
@@ -377,29 +373,54 @@ def getTrainingDataFromDirectories(trainingDirectories, filter=None, iterations=
     return {'spikeTimes': spikeTimes, 'lastSpikeAt': finishesAt}
 
 
-def getTrainingData(inputlayerSize, sourceFile1, sourceFile2, iterations, timebetweenSamples, randomise=False):
-    aedata1 = f.readData(sourceFile1)
-    aedata2 = f.readData(sourceFile2)
-
-    if randomise:
-        ordering = orderRandomly(aedata1, aedata2, iterations)
-    else:
-        ordering = []
+def getTrainingData(inputlayerSize, sourceFiles, iterations, timebetweenSamples, randomise=False):
+    aedata = []
+    for file in sourceFiles:
         for i in range(iterations):
-            ordering.append(aedata1)
-            ordering.append(aedata2)
+            aedata.append(f.readData(file))
+    # aedata2 = f.readData(sourceFile2)
+    #
+    # if randomise: # todo make a list of inputs be handleable
+    #     ordering = orderRandomly(aedata1, aedata2, iterations)
+    # else:
+    #     ordering = []
+    #     for i in range(iterations):
+    #         ordering.append(aedata1)
+    #         ordering.append(aedata2)
+
+    ordering = aedata
 
     cont = readSpikes(ordering, timebetweenSamples)
     data = cont['data']
 
     spikeTimes = []
-    for neuronSpikes in data.values():
-        neuronSpikes.sort()
-        spikeTimes.append(neuronSpikes)
+    # create 2d array of neuron layer (such that x,y coordinates are applicable)
+    layerWidth = int(math.ceil(math.sqrt(inputlayerSize)))
+    for x in range(layerWidth):
+        for y in range(layerWidth):
+            spikeTimes.append([])
 
-    fillFrom = len(spikeTimes)
-    for i in range(fillFrom, inputlayerSize):
-        spikeTimes.append([])
+
+    for neuron in data:
+        x = int(neuron[0])
+        y = int(neuron[1])
+        # print "Layer Width: " + str(layerWidth)
+        # print x, y
+        index = (x-1) * layerWidth + (y-1)  # the -1 terms come from the fact that the input from the DVS
+                                            # starts numbering the coordinates from 1
+        spikeTimes[index] = data.get(neuron)
+
+    # print "spikeTimes"
+    # print len(spikeTimes)
+    # print spikeTimes
+
+    # for neuronSpikes in data.values():
+    #     neuronSpikes.sort()
+    #     spikeTimes.append(neuronSpikes)
+    #
+    # fillFrom = len(spikeTimes)
+    # for i in range(fillFrom, inputlayerSize):
+    #     spikeTimes.append([])
 
     return {'spikeTimes': spikeTimes,
             'sampleTimes': cont['sampleTimes'],
