@@ -63,6 +63,8 @@ def evaluateEndPositions(nrInputNeurons, sources, inputWeights, trainedNetwork):
     trainedNetwork.run(runTime=runTime, record=True)
 
     trajSpikes = trainedNetwork.layers[0].pop.getSpikes(compatible_output=True)
+    print "traj Spikes"
+    print trajSpikes
 
     spikes = trainedNetwork.layers[1].pop.getSpikes(compatible_output=True)
     print "spikes"
@@ -79,8 +81,7 @@ def connectTrajectoryAndPositionLayer(net, pairings, positionLayer, trajectoryLa
     connections = []
     nrPosNeuron = 0
     for sourceNeuron in pairings.values():  # Allocate all learned trajectories to an end-position neuron
-        connections.append((sourceNeuron, nrPosNeuron, 1, n.__STDPParameters__[
-            'delay']))  # TODO improve this when multiple trajectories represent the same end pos
+        connections.append((sourceNeuron, nrPosNeuron, 20, n.__STDPParameters__[                                   'delay']))  # TODO improve this when multiple trajectories represent the same end pos
         nrPosNeuron += 1
     traj_posConnection = net.connect(trajectoryLayer, positionLayer,
                                      connectivity=p.FromListConnector(connections))  # type='excitatory' by default

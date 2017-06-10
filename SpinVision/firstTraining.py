@@ -20,7 +20,7 @@ def trainWithWeightSource():
     print "STDPParameters: " + str(n.__STDPParameters__)
     print "Neuron Params: " + str(n.__neuronParameters__)
 
-    weights = control.train_Trajectories(1024, 10, 50, [files[0], files[1]], plot=True, save=True, destFile=files[2])
+    weights = control.train_Trajectories(1024, 10, 20, [files[0], files[1]], plot=True, save=False)#, destFile=files[2])
     # weights = control.trainTrajectories(60, 3, 100, files[0], files[1], plot=True)#, weightSource=files[2])
     # print weights
 
@@ -32,5 +32,5 @@ def trainForEndPos():
     hallelujah = control.evaluateEndPositions(1024, sources, inputWeights=weights, trainedNetwork=net)
 
 
-# trainWithWeightSource()
+trainWithWeightSource()
 trainForEndPos()
