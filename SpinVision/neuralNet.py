@@ -7,7 +7,7 @@ import random as r
 import numpy as np
 import math
 
-
+INHIB_WEIGHT = 5
 Layer = namedtuple("Layer", "pop nType nParams")
 Connection = namedtuple("Connection", "proj pre post connectivity type")
 
@@ -238,7 +238,7 @@ class NeuralNet(object):
                                       weights, STDP_Params['weightInit'])
 
         inhibitoryNr = self.connect(outputLayerNr, outputLayerNr,
-                                    connectivity=p.AllToAllConnector(weights=5, delays=STDP_Params['delay']),
+                                    connectivity=p.AllToAllConnector(weights=INHIB_WEIGHT, delays=STDP_Params['delay']),
                                     type='inhibitory')
 
         return {'inputLayer': inputLayerNr, 'outputLayer': outputLayerNr,

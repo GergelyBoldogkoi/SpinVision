@@ -250,13 +250,13 @@ def truncate(sourcePath, from_us, to_us, destPath):
                 includeIsSet = True
 
 
-        # print "ts " + str(ts)
-        # print "to_us " + str(to_us)
-        # print "ts-toUs " + str(ts-to_us)
-        # print "ts > to_us " + str(ts > to_us)
-        #
-        # print "prevTs " + str(prevTs)
-        # print "prevTs <= to_us " + str(prevTs <= to_us)
+        print "ts " + str(ts)
+        print "to_us " + str(to_us)
+        print "ts-toUs " + str(ts-to_us)
+        print "ts > to_us " + str(ts > to_us)
+
+        print "prevTs " + str(prevTs)
+        print "prevTs <= to_us " + str(prevTs <= to_us)
         if ts >= to_us and prevTs <= to_us:  # includes events at fromMs and toMs
             stopAt = i
             break

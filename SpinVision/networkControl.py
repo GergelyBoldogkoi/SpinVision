@@ -15,13 +15,13 @@ TIME_BETWEEN_ITERATIONS = 500
 ITERATIONS = 5
 RUNTIME_CONSTANT = 1
 MAX_ITERATIONS_FOR_TRAINING_RUN = 25  # Todo tune this number
-WMAX = 0.2  # n.__STDPParameters__['wMax']
+WMAX = 0.175  # n.__STDPParameters__['wMax']
 WMIN = n.__STDPParameters__['wMin']
 MEAN = n.__STDPParameters__['mean']
 STD = n.__STDPParameters__['std']
 
-CONNSTRENGTH_TRAJ_POS = 40
-INHIBITORY_WEIGHTS = 60
+CONNSTRENGTH_TRAJ_POS = 15
+INHIBITORY_WEIGHTS = 200
 
 
 # //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -90,8 +90,9 @@ def connectTrajectoryAndPositionLayer(net, pairings, positionLayer, trajectoryLa
     connections = []
     nrPosNeuron = 0 # number indexing the position neuron, needs to be done this way, because neuron number and positions
                     # might not correspond
-
+    print "pairings " + str(pairings)
     for posID in pairings.keys():
+
         for neuron in pairings[posID]:
             print "Adding connection between traj neuron " + str(neuron) + " and position " + str(posID) + ", " + str(nrPosNeuron)
             connections.append((neuron, nrPosNeuron, CONNSTRENGTH_TRAJ_POS, n.__STDPParameters__['delay']))
@@ -177,8 +178,8 @@ def train_Trajectories(inputSize, outputSize, iterations, sources, weightSource=
         print "displaying info with i, previ: " + str(i) + ', ' + str(prevIndex)
         print "len untrained Weights: " + str(len(untrainedWeights))
         print "len trained Weights: " + str(len(weightList[i]))
-        if i == len(weightList) -1: #only plot the last bit
-            displayInfo(plot, [sources[i]], untrainedWeights, weightList[i], weightList[prevIndex])
+        # if i == len(weightList) -1: #only plot the last bit
+        #     displayInfo(plot, [sources[i]], untrainedWeights, weightList[i], weightList[prevIndex])
 
 
     if save:
@@ -329,21 +330,26 @@ def get2LayerNetworkResponses(untrainedWeights, trainedWeights, previousTrainedW
 # //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 def plotSpikes(untrainedSpikes, trainedSpikes, prevTrainedSpikes=None, block=True):
-    b, axarr = plt.subplots(3, sharex=True, sharey=True)
+    prevTrainedSpikes = None
+    if prevTrainedSpikes is not None:
+        b, axarr = plt.subplots(3, sharex=True, sharey=True)
+    else:
+        b, axarr = plt.subplots(2, sharex=True, sharey=True)
+
     if len(untrainedSpikes) != 0:
         axarr[0].plot(untrainedSpikes[:, 1], untrainedSpikes[:, 0], ls='', marker='|', markersize=8, ms=1)
         axarr[0].set_title('Response of Untrained Network')
         axarr[0].grid()
 
     if len(trainedSpikes) != 0:
-        axarr[2].set_title('Response of fully trained Network')
-        axarr[2].plot(trainedSpikes[:, 1], trainedSpikes[:, 0], ls='', marker='|', markersize=8, ms=1)
-        axarr[2].grid()
-
-    if prevTrainedSpikes is  not None and len(prevTrainedSpikes) != 0:
-        axarr[1].set_title('Response of Network from previous iteraion')
+        axarr[1].set_title('Response of fully trained Network')
         axarr[1].plot(trainedSpikes[:, 1], trainedSpikes[:, 0], ls='', marker='|', markersize=8, ms=1)
         axarr[1].grid()
+
+    if prevTrainedSpikes is not None and len(prevTrainedSpikes) != 0:
+        axarr[2].set_title('Response of Network from previous iteraion')
+        axarr[2].plot(trainedSpikes[:, 1], trainedSpikes[:, 0], ls='', marker='|', markersize=8, ms=1)
+        axarr[2].grid()
     plt.show(block=block)
 
 
@@ -513,9 +519,9 @@ def pairNeuronsToPositions(neuron_trajParings, pos_trajPairings):
 
     pairings = {}
 
-
+    print pos_trajPairings
     for trajectory in neuron_trajParings.keys():
-        print "trajectory: " + str(trajectory)
+        print "trajectory: " + str(trajectory[len(trajectory) - 27 : len(trajectory)])
         neuronID = neuron_trajParings[trajectory]
         positionID = pos_trajPairings[trajectory]
 

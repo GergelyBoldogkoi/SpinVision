@@ -3,7 +3,7 @@ import SpinVision.neuralNet as n
 import SpinVision.networkControl as control
 import numpy
 numpy.set_printoptions(threshold=numpy.nan)
-basepath = "/home/kavits/Project/New Recodrings/"
+basepath = "/home/kavits/Project/New Recordings/"
 
 def truncateRecording(source, start,end, dest):
     fromTime_us = 116896935
@@ -29,10 +29,10 @@ def denoise(sources, dests, windowSize, threshold):
 def truncateFiles(recordings):
     for trajectory in recordings.keys():
         for sample in range(len(recordings[trajectory])):
-            sourcePath = basepath + "32x32_denoised/" + str(trajectory) + "_denoised_32x32"
-            destPath = basepath + "32x32_denoised_Samples/" + str(trajectory) + "_denoised_32x32_Sample" + str(sample+1)
-            # print destPath
-            # print recordings[trajectory][sample][0], recordings[trajectory][sample][1]
+            sourcePath = basepath + "32x32_denoisedWithHighThreshold/" + str(trajectory) + "_denoisedWHT_32x32"
+            destPath = "/home/kavits/Project/New Recordings/32x32_denoisedWHT_Samples/" + str(trajectory) + "_denoisedWHT_32x32_Sample" + str(sample+1)
+            print destPath
+            print recordings[trajectory][sample][0], recordings[trajectory][sample][1]
             from_us = int( recordings[trajectory][sample][0])
             to_us = int(recordings[trajectory][sample][1])
             handler.truncate(sourcePath, from_us, to_us, destPath)
@@ -53,10 +53,21 @@ def readTruncationParams():
 
     return recordings
 
-
+#
 recordings = readTruncationParams()
 truncateFiles(recordings)
+#
+# sources = []
+# dests = []
+# for i in range(1,6):
+#     for j in range(1,6):
+#         sources.append(basepath + "denoisedWithHighThreshold/" + str(i) + "-" + str(j) + "_denoisedWHT")
+#         dests.append(basepath + "32x32_denoisedWithHighThreshold/" + str(i) + "-" + str(j) + "_denoisedWHT_32x32")
 
+# denoise(sources,dests, windowSize=3, threshold=10)
+
+# for i in range(len(sources)):
+#     handler.downsample(sources[i],dests[i],4)
 # sources = []
 # dests = []
 # for i in range(1,6):

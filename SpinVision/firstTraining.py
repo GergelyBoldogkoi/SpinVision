@@ -16,63 +16,71 @@ import math
 
 
 
-path = "/home/kavits/Project/New Recodrings/32x32_denoised_Samples/"
-files = []
+path = "/home/kavits/Project/New Recordings/32x32_denoised_Samples/"
+files = [0] * 7
 
-files.append(path + "1-1_denoised_32x32_Sample2")
+files[0] = path + "1-1_denoised_32x32_Sample2"
 # files.append(path + "1-2_denoised_32x32_Sample2")
 # files.append(path + "1-3_denoised_32x32_Sample2")
 # files.append(path + "1-4_denoised_32x32_Sample3")
 # files.append(path + "1-5_denoised_32x32_Sample2")
 
 # files.append(path + "2-1_denoised_32x32_Sample2")
-files.append(path + "2-2_denoised_32x32_Sample2")
+files[1] = path + "2-2_denoised_32x32_Sample2"
 # files.append(path + "2-3_denoised_32x32_Sample1")
 # files.append(path + "2-4_denoised_32x32_Sample1")
 # files.append(path + "2-5_denoised_32x32_Sample1")
 
-# files.append(path + "3-1_denoised_32x32_Sample2")
+files[2] = (path + "3-1_denoised_32x32_Sample2")
 # files.append(path + "3-2_denoised_32x32_Sample2")
-files.append(path + "3-3_denoised_32x32_Sample2")
+files[3] = (path + "3-3_denoised_32x32_Sample2")
 # files.append(path + "3-4_denoised_32x32_Sample2")
-# files.append(path + "3-5_denoised_32x32_Sample2")
+files[4] = (path + "3-5_denoised_32x32_Sample2")
 
 # files.append(path + "4-1_denoised_32x32_Sample2")
 # files.append(path + "4-2_denoised_32x32_Sample1")
 # files.append(path + "4-3_denoised_32x32_Sample2")
-files.append(path + "4-4_denoised_32x32_Sample2")
+files[5] = (path + "4-4_denoised_32x32_Sample2")
 # files.append(path + "4-5_denoised_32x32_Sample2")
 
 # files.append(path + "5-1_denoised_32x32_Sample1")
 # files.append(path + "5-2_denoised_32x32_Sample1")
 # files.append(path + "5-3_denoised_32x32_Sample1")
 # files.append(path + "5-4_denoised_32x32_Sample2")
-files.append(path + "5-5_denoised_32x32_Sample2")
+files[6] = (path + "5-5_denoised_32x32_Sample2")
 
 
 tpPairings = {}
 tpPairings[files[0]] = 1
 tpPairings[files[1]] = 2
-tpPairings[files[2]] = 3
-tpPairings[files[3]] = 4
+
+tpPairings[files[2]] = 1
+tpPairings[files[3]] = 3
 tpPairings[files[4]] = 5
+
+tpPairings[files[5]] = 4
+tpPairings[files[6]] = 5
+
+print "tpPairings"
+print tpPairings
 
 files2 = []
 path2 = "/home/kavits/Project/SpinVision/SpinVision/resources/NetworkWeights/"
-files2.append(path2 + "trials")
+#file "trials" has 20 iterations and recognises 7 traj and 5 pos recognises trajectories with huge delay and connstr = 15, inhibstr = 1000
+files2.append(path2 + "trials1")
 
 sources = files
 
-tpPairings = {}
-print "files length: " + str(len(files))
-poscount = 1
-for i in range(0, len(files)):
-    tpPairings[files[i]] = poscount
-    poscount += 1
-    if poscount == 6:
-        poscount = 1
-
-print tpPairings
+# tpPairings = {}
+# print "files length: " + str(len(files))
+# poscount = 1
+# for i in range(0, len(files)):
+#     tpPairings[files[i]] = poscount
+#     poscount += 1
+#     if poscount == 6:
+#         poscount = 1
+#
+# print tpPairings
 
 
 def trainWithWeightSource():
