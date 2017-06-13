@@ -193,6 +193,31 @@ class networkControlTests(unittest.TestCase):
         self.assertEquals(2, len(net.layers))
         self.assertEquals(1, len(net.connections))
 
+    def test_canPairNeuronsToPositions(self):
+        #neuron trajectory pairings
+        ntP = {}
+        ntP['1'] = 1
+        ntP['2'] = 1
+        ntP['3'] = 2
+        ntP['4'] = 3
+        ntP['5'] = 3
+        # trajectory position pairings
+        tpP = {}
+        tpP['1'] = 1
+        tpP['2'] = 1
+        tpP['3'] = 1
+        tpP['4'] = 2
+        tpP['5'] = 3
+
+        npP = control.pairNeuronsToPositions(ntP, tpP)
+
+        #there should be an error thrown: ERROR a neuron represents a wrong endposition, it has been trained to represent position 3 so it can't represent pos: 2 as well!
+
+        self.assertEquals([1,2], npP[1])
+        self.assertEquals([3], npP[2])
+
+
+
 
 
 

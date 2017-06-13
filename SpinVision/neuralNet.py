@@ -403,12 +403,21 @@ def getTrainingData(inputlayerSize, sourceFiles, iterations, timebetweenSamples,
 
     for neuron in data:
         x = int(neuron[0])
+        if x == 128:
+            x = 0
         y = int(neuron[1])
-        # print "Layer Width: " + str(layerWidth)
-        # print x, y
         index = (x-1) * layerWidth + (y-1)  # the -1 terms come from the fact that the input from the DVS
                                             # starts numbering the coordinates from 1
-        spikeTimes[index] = data.get(neuron)
+
+        if index > len(spikeTimes):
+            print "ERROR ignoring input"    # Interesting thing: SOMETIMES neuron with x=128 gets passed in todo investigate
+                                            # about 5 spikes, so should be fine
+            print "x " + str(x)
+            print "y " + str(y)
+            print "width spiketimes " + str(layerWidth)
+        else:
+
+            spikeTimes[index] = data.get(neuron)
 
     # print "spikeTimes"
     # print len(spikeTimes)

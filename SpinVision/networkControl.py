@@ -15,21 +15,25 @@ TIME_BETWEEN_ITERATIONS = 500
 ITERATIONS = 5
 RUNTIME_CONSTANT = 1
 MAX_ITERATIONS_FOR_TRAINING_RUN = 25  # Todo tune this number
-WMAX = 0.1  # n.__STDPParameters__['wMax']
+WMAX = 0.2  # n.__STDPParameters__['wMax']
 WMIN = n.__STDPParameters__['wMin']
 MEAN = n.__STDPParameters__['mean']
 STD = n.__STDPParameters__['std']
+
+CONNSTRENGTH_TRAJ_POS = 40
+INHIBITORY_WEIGHTS = 60
 
 
 # //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #                              Train End-Positions
 # //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-def train_endPositions(nrEndPositions, sources, trainedWeights):
 
-    assert nrEndPositions == len(sources)
+
+def train_endPositions(nrEndPositions, sources, trainedWeights, pos_trajPairings):
+
     # Find out which neurons respond to which input
-    pairings = pairInputsWithNeurons(sources, trainedWeights)
+    neuron_trajParings = pairInputsWithNeurons(sources, trainedWeights)
 
     nrInputNeurons = len(trainedWeights)
     nrTrajectoryNeurons = len(trainedWeights[0])
@@ -40,9 +44,15 @@ def train_endPositions(nrEndPositions, sources, trainedWeights):
     #create trajectory and end-position layer
     trajectoryLayer = net.addLayer(nrTrajectoryNeurons, n.__neuronType__, n.__neuronParameters__)
     positionLayer = net.addLayer(nrEndPositions, n.__neuronType__, n.__neuronParameters__)
-    traj_posConnection = connectTrajectoryAndPositionLayer(net, pairings, positionLayer, trajectoryLayer)
 
-    return net
+
+    neuron_posPairings = pairNeuronsToPositions(neuron_trajParings, pos_trajPairings)
+
+    traj_posConnection = connectTrajectoryAndPositionLayer(net, neuron_posPairings, positionLayer, trajectoryLayer)
+    inhibitoryConnection = net.connect(positionLayer, positionLayer, p.AllToAllConnector(weights=INHIBITORY_WEIGHTS, delays=1),
+                                       type='inhibitory')
+
+    return {'net': net, 'pairings': neuron_posPairings}
 
 def evaluateEndPositions(nrInputNeurons, sources, inputWeights, trainedNetwork):
 
@@ -55,20 +65,19 @@ def evaluateEndPositions(nrInputNeurons, sources, inputWeights, trainedNetwork):
 
     connections = n.createConnectionsFromWeights(inputWeights)
 
-    #as the trajectory layer is added first to network its number is 9 #TODO get rid of this magic number
+    #as the trajectory layer is added first to network its number is 0 #TODO get rid of this magic number
     input_trajConnection = trainedNetwork.connect(inputLayer, 0, p.FromListConnector(connections))
 
-    #todo do something with the fact that now all output positions are going to spike if the connected neuron spikes (which it does)
     runTime = int(lastSpike + 100) / RUNTIME_CONSTANT
     trainedNetwork.run(runTime=runTime, record=True)
 
     trajSpikes = trainedNetwork.layers[0].pop.getSpikes(compatible_output=True)
-    print "traj Spikes"
-    print trajSpikes
+    # print "traj Spikes"
+    # print trajSpikes
 
     spikes = trainedNetwork.layers[1].pop.getSpikes(compatible_output=True)
-    print "spikes"
-    print spikes
+    # print "spikes"
+    # print spikes
 
     p.end() #disconnect from SpiNNaker
 
@@ -79,10 +88,15 @@ def evaluateEndPositions(nrInputNeurons, sources, inputWeights, trainedNetwork):
 
 def connectTrajectoryAndPositionLayer(net, pairings, positionLayer, trajectoryLayer):
     connections = []
-    nrPosNeuron = 0
-    for sourceNeuron in pairings.values():  # Allocate all learned trajectories to an end-position neuron
-        connections.append((sourceNeuron, nrPosNeuron, 20, n.__STDPParameters__[                                   'delay']))  # TODO improve this when multiple trajectories represent the same end pos
+    nrPosNeuron = 0 # number indexing the position neuron, needs to be done this way, because neuron number and positions
+                    # might not correspond
+
+    for posID in pairings.keys():
+        for neuron in pairings[posID]:
+            print "Adding connection between traj neuron " + str(neuron) + " and position " + str(posID) + ", " + str(nrPosNeuron)
+            connections.append((neuron, nrPosNeuron, CONNSTRENGTH_TRAJ_POS, n.__STDPParameters__['delay']))
         nrPosNeuron += 1
+
     traj_posConnection = net.connect(trajectoryLayer, positionLayer,
                                      connectivity=p.FromListConnector(connections))  # type='excitatory' by default
     return traj_posConnection
@@ -94,7 +108,7 @@ def pairInputsWithNeurons(sources, trainedWeights):
         for i in range(len(trainedWeights[0])): # For each trajectory neuron
             formattedSpikes.append([])
 
-        spikes = get2LayerNetworkResponses(None, trainedWeights, [recordingName], plot=False)['trained']
+        spikes = get2LayerNetworkResponses(None, trainedWeights, None, [recordingName], plot=False)['trained']
 
         for spike in spikes: # reformat spikes, so that we get rid of the numpy datatypes
             formattedSpikes[int(spike[0])].append(spike[1])
@@ -131,7 +145,9 @@ def train_Trajectories(inputSize, outputSize, iterations, sources, weightSource=
 
     # If we want to train from scratch (e.g. no good initial weights we can use)
     if weightSource is None:
+
         if weightDistr == 'uniform':
+            print "creating uniform weight distr"
             weights = n.createUniformWeights(inputSize, outputSize, WMAX, WMIN)
         if weightDistr == 'gaussian':
             weights = n.createGaussianWeights(inputSize, outputSize, mean=MEAN, stdev=STD)
@@ -139,19 +155,32 @@ def train_Trajectories(inputSize, outputSize, iterations, sources, weightSource=
     else:
         weights = loadWeights(weightSource)
 
-    print "Trained first trajectory"
     untrainedWeights = weights
 
-    weights = do_TrainingIterations(iterations, [sources[0]], weights)
+    weightList = []
+    for source in sources:
+        print " Training for " + str(source)
+        weights = do_TrainingIterations(iterations, [source], weights)  # only passing in one source at a time because network
+                                                                        # has to learn one by one
+        print "Adding weights to weight list, with len: " + str(len(weights))
+        weightList.append(weights)
+        # printWeights(weights)
 
-    firstWeights = weights
 
-    weights = do_TrainingIterations(iterations, [sources[1]], weights)
+    for i in range(len(weightList)):
+        prevIndex = i - 1
+        if prevIndex < 0:
+            prevIndex = 0
 
-    displayInfo(plot, [sources[0]], untrainedWeights, firstWeights)
 
-    print "Trained second trajectory"
-    displayInfo(plot, [sources[0], sources[1]], untrainedWeights, weights)
+        # if i == len(weightList) -1:
+        print "displaying info with i, previ: " + str(i) + ', ' + str(prevIndex)
+        print "len untrained Weights: " + str(len(untrainedWeights))
+        print "len trained Weights: " + str(len(weightList[i]))
+        if i == len(weightList) -1: #only plot the last bit
+            displayInfo(plot, [sources[i]], untrainedWeights, weightList[i], weightList[prevIndex])
+
+
     if save:
         saveWeights(weights, destFile)
 
@@ -220,7 +249,7 @@ def train_TrajectoriesWithWeights(weights, iterations, sources, plot=False, star
                                               timeBetweenSamples=TIME_BETWEEN_ITERATIONS, iterations=iterations,
                                               weights=weights)
 
-    runTime = int(networkData['lastSpikeAt'] + 10) / RUNTIME_CONSTANT
+    runTime = int(networkData['lastSpikeAt'] + 1000) / RUNTIME_CONSTANT
     # print "weights before trainin"
     # printWeights(weights)
     net.run(runTime, record=True)
@@ -240,9 +269,10 @@ def train_TrajectoriesWithWeights(weights, iterations, sources, plot=False, star
 
 # This function creates an untrained and a trained network, gets their responses to stimuli
 # located in source1 and source 2
-def get2LayerNetworkResponses(untrainedWeights, trainedWeights, sources, plot=False, startFromNeuron=0):
+def get2LayerNetworkResponses(untrainedWeights, trainedWeights, previousTrainedWeights, sources, plot=False, startFromNeuron=0):
     untrainedSpikes = []
     trainedSpikes = []
+    prevTrainedSpikes = []
     if untrainedWeights is not None:
         # with n.NeuralNet() as untrainedNet:
         untrainedNet = n.NeuralNet()
@@ -264,19 +294,31 @@ def get2LayerNetworkResponses(untrainedWeights, trainedWeights, sources, plot=Fa
         runTime = trainedData['runTime'] / RUNTIME_CONSTANT
         trainedNet.run(runTime)
 
+
         outLayer = trainedNet.layers[out].pop
         trainedSpikes = outLayer.getSpikes(compatible_output=True)
+        p.end()
+
+    if previousTrainedWeights is not None:
+        prevtrainedNet = n.NeuralNet()
+        prevtrainedData = prevtrainedNet.setUp2LayerEvaluation(previousTrainedWeights, sources, startFromNeuron=startFromNeuron)
+        out = prevtrainedData['outputLayer']
+        runTime = prevtrainedData['runTime'] / RUNTIME_CONSTANT
+        prevtrainedNet.run(runTime)
+
+        outLayer = prevtrainedNet.layers[out].pop
+        prevTrainedSpikes = outLayer.getSpikes(compatible_output=True)
+        p.end()
 
     if plot:
         if trainedWeights is not None:
             if untrainedWeights is not None:
-                plotSpikes(untrainedSpikes, trainedSpikes)
+                plotSpikes(untrainedSpikes, trainedSpikes, prevTrainedSpikes)
             else:
                 plotSpikes([], trainedSpikes)
         elif untrainedWeights is not None:
-            plotSpikes(untrainedWeights, [])
+            plotSpikes(untrainedSpikes, [])
 
-    p.end()
     return {'untrained': untrainedSpikes, 'trained': trainedSpikes}
 
 
@@ -286,15 +328,20 @@ def get2LayerNetworkResponses(untrainedWeights, trainedWeights, sources, plot=Fa
 #                               PLOTTING
 # //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-def plotSpikes(untrainedSpikes, trainedSpikes, block=True):
-    b, axarr = plt.subplots(2, sharex=True, sharey=True)
+def plotSpikes(untrainedSpikes, trainedSpikes, prevTrainedSpikes=None, block=True):
+    b, axarr = plt.subplots(3, sharex=True, sharey=True)
     if len(untrainedSpikes) != 0:
         axarr[0].plot(untrainedSpikes[:, 1], untrainedSpikes[:, 0], ls='', marker='|', markersize=8, ms=1)
-        axarr[0].set_title('Before Training')
+        axarr[0].set_title('Response of Untrained Network')
         axarr[0].grid()
 
     if len(trainedSpikes) != 0:
-        axarr[1].set_title('After Training')
+        axarr[2].set_title('Response of fully trained Network')
+        axarr[2].plot(trainedSpikes[:, 1], trainedSpikes[:, 0], ls='', marker='|', markersize=8, ms=1)
+        axarr[2].grid()
+
+    if prevTrainedSpikes is  not None and len(prevTrainedSpikes) != 0:
+        axarr[1].set_title('Response of Network from previous iteraion')
         axarr[1].plot(trainedSpikes[:, 1], trainedSpikes[:, 0], ls='', marker='|', markersize=8, ms=1)
         axarr[1].grid()
     plt.show(block=block)
@@ -376,7 +423,7 @@ def printWeights(weights):
         print weights[i]
 
 
-def displayInfo(plot, sources, untrainedWeights, weights, startFromNeuron=0):
+def displayInfo(plot, sources, untrainedWeights, weights, previousTrainedWeights, startFromNeuron=0):
     avgChange = getAvgChangeInWeights(untrainedWeights, weights)
     print " average change in weights: " + str(avgChange)
     print "that is a change of " + str(getAvgChangeInWeights(untrainedWeights, weights) * 100) + '%'
@@ -397,7 +444,7 @@ def displayInfo(plot, sources, untrainedWeights, weights, startFromNeuron=0):
         plot2DWeightsOrdered(untrainedWeights, weights, plot)
         plotWeightHeatmap(untrainedWeights, weights, plot)
         # plot spikes
-        get2LayerNetworkResponses(untrainedWeights, weights, sources, plot, startFromNeuron=startFromNeuron)
+        get2LayerNetworkResponses(untrainedWeights, weights, None, sources, plot, startFromNeuron=startFromNeuron)
 
 def getAvgChangeInWeights(untrainedWeights, trainedWeights):
     change = 0
@@ -458,3 +505,47 @@ def loadWeights(sourceFile):
             weights[i] = [float(w) for w in lines[i].split()]
 
     return weights
+
+# pos traj pairing: { pathToRecording: positionId} KNOWN IN ADVANCE
+# neuron traj pairing{pathToRecording: neuronId} CALCULATED
+# neuron pos pairing {posID: list of neurons} RESULT
+def pairNeuronsToPositions(neuron_trajParings, pos_trajPairings):
+
+    pairings = {}
+
+
+    for trajectory in neuron_trajParings.keys():
+        print "trajectory: " + str(trajectory)
+        neuronID = neuron_trajParings[trajectory]
+        positionID = pos_trajPairings[trajectory]
+
+        #if neuronId is not already allocated
+        neuronAllocated = False
+        neuronAllocatedToPositions = []
+
+        if positionID not in pairings.keys():
+            pairings[positionID] = [neuronID]
+            print pairings
+
+        else: #position is already in pairings
+            print "Looks like neuron " + str(neuronID) + " represents a trajectory, the corresponding endposition of which has already been learned"
+            if neuronID not in pairings[positionID]:
+                pairings[positionID].append(neuronID)
+
+
+        # if the error is raised, a pairing is returned, where a neuron corresponts to multiple end positions!!
+        for position in pairings.keys():
+            if neuronID in pairings[position]:
+                neuronAllocatedToPositions.append(position)
+
+        if len(neuronAllocatedToPositions) > 1:  # if neuron represents more than 1 endposition
+            print "ERROR a neuron represents a wrong endposition, it has been trained to represent position " + str(
+                position) + " " \
+                            "so it can't represent pos: " + str(positionID) + " as well!"
+            # raise RuntimeError(
+            #     "ERROR a neuron represents a wrong endposition, it has been trained to represent position " + str(
+            #         position) + " " \
+            #                     "so it can't represent pos: " + str(positionID) + " as well!")
+
+
+    return pairings
