@@ -81,8 +81,8 @@ def evaluateEndPositions(nrInputNeurons, sources, inputWeights, trainedNetwork):
 
     p.end() #disconnect from SpiNNaker
 
-    plotSpikes([], trajSpikes, block=True)
-    plotSpikes([], spikes, block=True)
+    plotPrettySpikes( trajSpikes, markersize=4)
+    plotPrettySpikes( spikes, markersize=8)
 
     return spikes
 
@@ -329,27 +329,39 @@ def get2LayerNetworkResponses(untrainedWeights, trainedWeights, previousTrainedW
 # //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #                               PLOTTING
 # //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+def plotPrettySpikes( trainedSpikes, block=True, markersize=5):
 
-def plotSpikes(untrainedSpikes, trainedSpikes, prevTrainedSpikes=None, block=True):
+
+    if len(trainedSpikes) != 0:
+        plt.title('Response of fully trained Network')
+        plt.plot(trainedSpikes[:, 1], trainedSpikes[:, 0], ls='', marker='o', markersize=markersize, ms=1)
+        plt.grid()
+
+    plt.show(block=block)
+
+
+def plotSpikes(untrainedSpikes, trainedSpikes, prevTrainedSpikes=None, block=True, markersize=5):
     prevTrainedSpikes = None
     if prevTrainedSpikes is not None:
         b, axarr = plt.subplots(3, sharex=True, sharey=True)
-    else:
+    elif untrainedSpikes is not None or len(untrainedSpikes) != 0:
         b, axarr = plt.subplots(2, sharex=True, sharey=True)
+    else:
+        b, axarr = plt.subplots(1)
 
     if len(untrainedSpikes) != 0:
-        axarr[0].plot(untrainedSpikes[:, 1], untrainedSpikes[:, 0], ls='', marker='|', markersize=8, ms=1)
+        axarr[0].plot(untrainedSpikes[:, 1], untrainedSpikes[:, 0], ls='', marker='o', markersize=markersize, ms=1)
         axarr[0].set_title('Response of Untrained Network')
         axarr[0].grid()
 
     if len(trainedSpikes) != 0:
         axarr[1].set_title('Response of fully trained Network')
-        axarr[1].plot(trainedSpikes[:, 1], trainedSpikes[:, 0], ls='', marker='|', markersize=8, ms=1)
+        axarr[1].plot(trainedSpikes[:, 1], trainedSpikes[:, 0], ls='', marker='o', markersize=markersize, ms=1)
         axarr[1].grid()
 
     if prevTrainedSpikes is not None and len(prevTrainedSpikes) != 0:
         axarr[2].set_title('Response of Network from previous iteraion')
-        axarr[2].plot(trainedSpikes[:, 1], trainedSpikes[:, 0], ls='', marker='|', markersize=8, ms=1)
+        axarr[2].plot(trainedSpikes[:, 1], trainedSpikes[:, 0], ls='', marker='|', markersize=markersize, ms=1)
         axarr[2].grid()
     plt.show(block=block)
 

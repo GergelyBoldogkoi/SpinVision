@@ -79,7 +79,7 @@ path2 = "/home/kavits/Project/SpinVision/SpinVision/resources/NetworkWeights/wit
 
 
 sources = files
-
+path = "/home/kavits/Project/good recording/denoised_32x32/"
 files2 = []
 files2.append(path + "1-1_denoised_32x32")
 # files2.append(path + "1-2_denoised_32x32")
@@ -127,7 +127,8 @@ def trainWithWeightSource():
     print "STDPParameters: " + str(n.__STDPParameters__)
     print "Neuron Params: " + str(n.__neuronParameters__)
 
-    weights = control.train_Trajectories(1024, 20, 20, sources, plot=True, save=True, destFile=saveFiles[0])
+    weights = control.train_Trajectories(1024, 20, 50, sources, plot=False, save=True, destFile=saveFiles[0])
+    # weights = control.train_Trajectories(1024, 20, 50, sources, weights=weights, plot=False, save=True, destFile=saveFiles[0])
     # weights = control.trainTrajectories(60, 3, 100, files[0], files[1], plot=True)#, weightSource=files[2])
     # print weights
 
@@ -136,8 +137,8 @@ evalFiles = []
 path2 = "/home/kavits/Project/SpinVision/SpinVision/resources/NetworkWeights/withGoodRecordings/"
 
 # file "trials" has 20 iterations and recognises 7 traj and 5 pos recognises trajectories with huge delay and connstr = 15, inhibstr = 1000
-evalFiles.append(saveFiles[0])
-
+# evalFiles.append("/home/kavits/Pictures/evaluation/Good Recordings 3,5,1 checkers, leftof 5-3 VERY GOOD 100 iterations/Weights")
+evalFiles.append("/home/kavits/Pictures/evaluation/Good Recordings 3,5,1 checkers, leftof 5-3 VERY GOOD 100 iterations/Weights")
 
 def trainForEndPos():
     weights = control.loadWeights(evalFiles[0])
@@ -148,5 +149,5 @@ def trainForEndPos():
     hallelujah = control.evaluateEndPositions(1024, evalSources, inputWeights=weights, trainedNetwork=obj['net'])
 
 
-trainWithWeightSource()
+# trainWithWeightSource()
 trainForEndPos()
