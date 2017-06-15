@@ -38,41 +38,44 @@ files = []
 # files.append(path + "5-4_denoised_32x32")
 
 
-files.append(path + "1-3_denoised_32x32")
+files.append(path + "3-1_denoised_32x32")
 files.append(path + "3-3_denoised_32x32")
-files.append(path + "5-3_denoised_32x32")
+files.append(path + "3-5_denoised_32x32")
 
+# files.append(path + "rightOf5-1_denoised_32x32")
+files.append(path + "leftOf5-3_denoised_32x32")
+files.append(path + "5-5_denoised_32x32")
 
 files.append(path + "1-1_denoised_32x32")
-files.append(path + "3-1_denoised_32x32")
+files.append(path + "1-3checkers_denoised_32x32")
+# files.append(path + "leftOf1-5_denoised_32x32")
+
 # files.append(path + "5-1_denoised_32x32")
 
 # files.append(path + "1-5_denoised_32x32")
-files.append(path + "3-5_denoised_32x32")
-files.append(path + "5-5_denoised_32x32")
 
 
 
 
 tpPairings = {}
-tpPairings[files[0]] = 3
+
+tpPairings[files[0]] = 1
 tpPairings[files[1]] = 3
-tpPairings[files[2]] = 3
+tpPairings[files[2]] = 5
 
-# tpPairings[files[3]] = 5
-tpPairings[files[3]] = 1
-tpPairings[files[4]] = 1
+tpPairings[files[3]] = 3
+tpPairings[files[4]] = 5
 
-# tpPairings[files[4]] = 3
 tpPairings[files[5]] = 1
-tpPairings[files[6]] = 1
+tpPairings[files[6]] = 3
+
+
 
 print "tpPairings"
 print tpPairings
 
-
 path2 = "/home/kavits/Project/SpinVision/SpinVision/resources/NetworkWeights/withGoodRecordings/"
-#file "trials" has 20 iterations and recognises 7 traj and 5 pos recognises trajectories with huge delay and connstr = 15, inhibstr = 1000
+# file "trials" has 20 iterations and recognises 7 traj and 5 pos recognises trajectories with huge delay and connstr = 15, inhibstr = 1000
 
 
 sources = files
@@ -81,7 +84,8 @@ files2 = []
 files2.append(path + "1-1_denoised_32x32")
 # files2.append(path + "1-2_denoised_32x32")
 # files2.append(path + "1-3_denoised_32x32")
-files2.append(path + "1-3_denoised_32x32")
+files2.append(path + "1-3checkers_denoised_32x32")
+# files2.append(path + "leftOf1-5_denoised_32x32")
 # files2.append(path + "1-4_denoised_32x323")
 # files2.append(path + "1-5_denoised_32x32")
 #
@@ -105,7 +109,8 @@ files2.append(path + "3-5_denoised_32x32")
 
 # files2.append(path + "5-1_denoised_32x32")
 # files2.append(path + "5-2_denoised_32x32")
-files2.append(path + "5-3_denoised_32x32")
+# files2.append(path + "rightOf5-1_denoised_32x32")
+files2.append(path + "leftOf5-3_denoised_32x32")
 # files2.append(path + "5-4_denoised_32x32")
 files2.append(path + "5-5_denoised_32x32")
 
@@ -113,6 +118,8 @@ evalSources = files2
 
 saveFiles = []
 saveFiles.append(path2 + "20iterNewRecordins")
+
+
 def trainWithWeightSource():
     # this is not gonna plot, just there to see if an error is raised
 
@@ -124,11 +131,14 @@ def trainWithWeightSource():
     # weights = control.trainTrajectories(60, 3, 100, files[0], files[1], plot=True)#, weightSource=files[2])
     # print weights
 
+
 evalFiles = []
 path2 = "/home/kavits/Project/SpinVision/SpinVision/resources/NetworkWeights/withGoodRecordings/"
 
-#file "trials" has 20 iterations and recognises 7 traj and 5 pos recognises trajectories with huge delay and connstr = 15, inhibstr = 1000
+# file "trials" has 20 iterations and recognises 7 traj and 5 pos recognises trajectories with huge delay and connstr = 15, inhibstr = 1000
 evalFiles.append(saveFiles[0])
+
+
 def trainForEndPos():
     weights = control.loadWeights(evalFiles[0])
     nrPos = 3

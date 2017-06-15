@@ -65,10 +65,13 @@ def denoiseAll():
 
 
 def downsampleAll():
-    for filename in os.listdir('/home/kavits/Project/good recording/denoised'):
-        print '/home/kavits/Project/good recording/denoised/' + filename[0:len(filename) - 6]
-        handler.downsample('/home/kavits/Project/good recording/denoised/' + filename[0:len(filename) - 6],
-                           '/home/kavits/Project/good recording/denoised_32x32/' + filename[0:len(filename) - 6] + '_32x32',
+    for filename in os.listdir('/home/kavits/Project/good recording'):
+        if 'denoised' in filename or 'Denoised' in filename or 'unfiltered' in filename:
+            continue
+        print '/home/kavits/Project/good recording/unfiltered/' + filename[0:len(filename) - 6]
+
+        handler.downsample('/home/kavits/Project/good recording/' + filename[0:len(filename) - 6],
+                           '/home/kavits/Project/good recording/unfiltered/' + filename[0:len(filename) - 6] + '_32x32',
                            4)
 
 def speedUpAll():
@@ -76,7 +79,7 @@ def speedUpAll():
         handler.speedUp(5,'/home/kavits/Project/good recording/denoised_32x32/' + filename[0:len(filename) - 6],
                         '/home/kavits/Project/good recording/denoised_32x32_5x/' + filename[
                                                                                 0:len(filename) - 6] + '_5x',)
-denoiseAll()
+downsampleAll()
 # sources = []
 # dests = []
 # for i in range(1,6):d

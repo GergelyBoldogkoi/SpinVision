@@ -20,8 +20,8 @@ __neuronParameters__ = {
     'v_reset': -70.0,  # The voltage to set the neuron at immediately after a spike
     'v_rest': -65,  # The ambient rest voltage of the neuron
     'v_thresh': -61,  # The threshold voltage at which the neuron will spike
-    'tau_syn_E': 5.0,  # The excitatory input current decay time-constant
-    'tau_syn_I': 50.0,  # The inhibitory input current decay time-constant
+    'tau_syn_E': 2.0,  # The excitatory input current decay time-constant
+    'tau_syn_I': 25.0,  # The inhibitory input current decay time-constant
     'i_offset': 0.0  # A base input current to add each timestep
 }
 __neuronType__ = p.IF_curr_exp

@@ -73,37 +73,22 @@ saveFiles.append(path2 + "sixtrajWHT")
 
 sources = files
 
+path = "/home/kavits/Project/good recording/denoised_32x32/"
 files2 = []
-files2.append("/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/TrainingSamples/Pos1-1_Sample1_denoised_32x32")
-# files2.append(path + "1-2_denoisedWHT_32x32_Sample2")
-files2.append("/home/kavits/Project/New Recordings/32x32_denoised_Samples/1-3_denoised_32x32_Sample2")
-# files2.append(path + "1-3_denoisedWHT_32x32_Sample2")
-# files2.append(path + "1-4_denoisedWHT_32x32_Sample3")
-files2.append("/home/kavits/Project/New Recordings/32x32_denoised_Samples/1-5_denoised_32x32_Sample1")
-#
-# files2.append(path + "2-1_denoisedWHT_32x32_Sample2")
-# files2.append(path + "2-2_denoisedWHT_32x32_Sample2")
-# files2.append(path + "2-3_denoisedWHT_32x32_Sample1")
-# files2.append(path + "2-4_denoisedWHT_32x32_Sample1")
-# files2.append(path + "2-5_denoisedWHT_32x32_Sample1")
+files2.append(path + "1-1_denoised_32x32")
+files2.append(path + "1-3_denoised_32x32")
+files2.append(path + "1-5_denoised_32x32")
 
-files2.append("/home/kavits/Project/New Recordings/32x32_denoised_Samples/3-1_denoised_32x32_Sample1")
-# files2.append(path + "3-2_denoisedWHT_32x32_Sample2")
-files2.append("/home/kavits/Project/New Recordings/32x32_denoised_Samples/3-3_denoised_32x32_Sample2")
-# files2.append(path + "3-4_denoisedWHT_32x32_Sample2")
-files2.append("/home/kavits/Project/New Recordings/32x32_denoised_Samples/3-5_denoised_32x32_Sample1")
+files2.append(path + "3-1_denoised_32x32")
+files2.append(path + "3-3_denoised_32x32")
+files2.append(path + "3-5_denoised_32x32")
 
-# files2.append(path + "4-1_denoisedWHT_32x32_Sample2")
-# files2.append(path + "4-2_ddenoisedWHT_32x32_Sample1")
-# files2.append(path + "4-3_denoisedWHT_32x32_Sample2")
-# files2.append(path + "4-4_denoisedWHT_32x32_Sample2")
-# files2.append(path + "4-5_denoisedWHT_32x32_Sample2")
+files2.append(path + "5-1_denoised_32x32")
+files2.append(path + "5-3_denoised_32x32")
+files2.append(path + "5-5_denoised_32x32")
 
-files2.append("/home/kavits/Project/New Recordings/32x32_denoised_Samples/5-1_denoised_32x32_Sample1")
-# files2.append(path + "5-2_denoisedWHT_32x32_Sample1")
-files2.append("/home/kavits/Project/New Recordings/32x32_denoised_Samples/5-3_denoised_32x32_Sample2")
-# files2.append(path + "5-4_denoisedWHT_32x32_Sample2")
-files2.append("/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/TrainingSamples/Pos5-5_Sample2_denoised_32x32")
+
+
 
 evalSources = files2
 
@@ -133,7 +118,7 @@ def trainWithWeightSource():
 evalFiles = []
 path2 = "/home/kavits/Project/SpinVision/SpinVision/resources/NetworkWeights/"
 #file "trials" has 20 iterations and recognises 7 traj and 5 pos recognises trajectories with huge delay and connstr = 15, inhibstr = 1000
-evalFiles.append(path2 + "50iter25ms")
+evalFiles.append(path2 + "recognises 9 a bit better")
 def trainForEndPos():
     weights = control.loadWeights(evalFiles[0])
     nrPos = 3
