@@ -15,7 +15,7 @@ TIME_BETWEEN_ITERATIONS = 500
 ITERATIONS = 5
 RUNTIME_CONSTANT = 1
 MAX_ITERATIONS_FOR_TRAINING_RUN = 25  # Todo tune this number
-WMAX = 0.175  # n.__STDPParameters__['wMax']
+WMAX = 0.15  # n.__STDPParameters__['wMax']
 WMIN = n.__STDPParameters__['wMin']
 MEAN = n.__STDPParameters__['mean']
 STD = n.__STDPParameters__['std']
@@ -95,7 +95,8 @@ def connectTrajectoryAndPositionLayer(net, pairings, positionLayer, trajectoryLa
 
         for neuron in pairings[posID]:
             print "Adding connection between traj neuron " + str(neuron) + " and position " + str(posID) + ", " + str(nrPosNeuron)
-            connections.append((neuron, nrPosNeuron, CONNSTRENGTH_TRAJ_POS, n.__STDPParameters__['delay']))
+            if neuron is not None:
+                connections.append((neuron, nrPosNeuron, CONNSTRENGTH_TRAJ_POS, n.__STDPParameters__['delay']))
         nrPosNeuron += 1
 
     traj_posConnection = net.connect(trajectoryLayer, positionLayer,
@@ -521,7 +522,7 @@ def pairNeuronsToPositions(neuron_trajParings, pos_trajPairings):
 
     print pos_trajPairings
     for trajectory in neuron_trajParings.keys():
-        print "trajectory: " + str(trajectory[len(trajectory) - 27 : len(trajectory)])
+        print "trajectory: " + str(trajectory[len(trajectory) - 30 : len(trajectory)])
         neuronID = neuron_trajParings[trajectory]
         positionID = pos_trajPairings[trajectory]
 

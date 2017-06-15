@@ -4,6 +4,7 @@ import SpinVision.networkControl as control
 import numpy
 numpy.set_printoptions(threshold=numpy.nan)
 basepath = "/home/kavits/Project/New Recordings/"
+import os
 
 def truncateRecording(source, start,end, dest):
     fromTime_us = 116896935
@@ -53,13 +54,32 @@ def readTruncationParams():
 
     return recordings
 
+homedir = '/home/kavits/Project/good recording'
+def denoiseAll():
+    for filename in os.listdir(homedir):
+        if 'denoised' in filename or 'Denoised' in filename:
+            continue
+        print homedir + '/' + filename[0:len(filename) - 6]
+        denoise([homedir + '/' + filename[0:len(filename) - 6]], [homedir + '/veryDenoised_32x32/' + filename[0:len(filename) - 6] + '_denoised'], 1, 7)
 #
-recordings = readTruncationParams()
-truncateFiles(recordings)
-#
+
+
+def downsampleAll():
+    for filename in os.listdir('/home/kavits/Project/good recording/denoised'):
+        print '/home/kavits/Project/good recording/denoised/' + filename[0:len(filename) - 6]
+        handler.downsample('/home/kavits/Project/good recording/denoised/' + filename[0:len(filename) - 6],
+                           '/home/kavits/Project/good recording/denoised_32x32/' + filename[0:len(filename) - 6] + '_32x32',
+                           4)
+
+def speedUpAll():
+    for filename in os.listdir('/home/kavits/Project/good recording/denoised_32x32'):
+        handler.speedUp(5,'/home/kavits/Project/good recording/denoised_32x32/' + filename[0:len(filename) - 6],
+                        '/home/kavits/Project/good recording/denoised_32x32_5x/' + filename[
+                                                                                0:len(filename) - 6] + '_5x',)
+denoiseAll()
 # sources = []
 # dests = []
-# for i in range(1,6):
+# for i in range(1,6):d
 #     for j in range(1,6):
 #         sources.append(basepath + "denoisedWithHighThreshold/" + str(i) + "-" + str(j) + "_denoisedWHT")
 #         dests.append(basepath + "32x32_denoisedWithHighThreshold/" + str(i) + "-" + str(j) + "_denoisedWHT_32x32")
@@ -122,3 +142,5 @@ truncateFiles(recordings)
 #
 # control.saveWeights(weights, destFile)
 # #? basepath + "Pos5-5_Sample2_denoised")
+
+

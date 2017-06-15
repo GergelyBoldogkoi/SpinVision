@@ -16,12 +16,14 @@ def read(filename):
 
 def readData(filename):
     sourceFile = filename + ".aedat"
+    print sourceFile
     aer = paer.aefile(sourceFile)
     data = paer.aedata(aer)
     # print data.x
     # print type(data.x)
 
     return data
+
 
 
 def readFile(filename):
