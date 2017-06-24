@@ -1,0 +1,32 @@
+path = "/home/kavits/Project/New Recordings/32x32_denoisedWHT_Samples/"
+files = []
+files.append(path + "1-1_denoisedWHT_32x32_Sample2")
+# files.append(path + "1-2_denoisedWHT_32x32_Sample2")
+files.append("/home/kavits/Project/New Recordings/32x32_denoised_Samples/1-3_denoised_32x32_Sample1")
+# files.append(path + "1-3_denoisedWHT_32x32_Sample2")
+# files.append(path + "1-4_denoisedWHT_32x32_Sample3")
+files.append(path + "1-5_denoisedWHT_32x32_Sample2")
+#
+# files.append(path + "2-1_denoisedWHT_32x32_Sample2")
+# files.append(path + "2-2_denoisedWHT_32x32_Sample2")
+# files.append(path + "2-3_denoisedWHT_32x32_Sample1")
+# files.append(path + "2-4_denoisedWHT_32x32_Sample1")
+# files.append(path + "2-5_denoisedWHT_32x32_Sample1")
+
+files.append(path + "3-1_denoisedWHT_32x32_Sample2")
+# files.append(path + "3-2_denoisedWHT_32x32_Sample2")
+files.append("/home/kavits/Project/New Recordings/32x32_denoised_Samples/3-3_denoised_32x32_Sample1")
+# files.append(path + "3-4_denoisedWHT_32x32_Sample2")
+files.append(path + "3-5_denoisedWHT_32x32_Sample2")
+
+# files.append(path + "4-1_denoisedWHT_32x32_Sample2")
+# files.append(path + "4-2_ddenoisedWHT_32x32_Sample1")
+# files.append(path + "4-3_denoisedWHT_32x32_Sample2")
+# files.append(path + "4-4_denoisedWHT_32x32_Sample2")
+# files.append(path + "4-5_denoisedWHT_32x32_Sample2")
+
+files.append(path + "5-1_denoisedWHT_32x32_Sample1")
+# files.append(path + "5-2_denoisedWHT_32x32_Sample1")
+files.append("/home/kavits/Project/New Recordings/32x32_denoised_Samples/5-3_denoised_32x32_Sample1")
+# files.append(path + "5-4_denoisedWHT_32x32_Sample2")
+files.append(path + "5-5_denoisedWHT_32x32_Sample2")
