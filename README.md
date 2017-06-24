@@ -1,6 +1,7 @@
 SPIN VISION
 
-Installation: 
+Installation:
+
 This section is going to give a short explanation of how to use the code and
 how to install the required software. First of all you are going to need to download jAER, the
 software from inilabs that allows your computer to communicate with the DVS camera and to
@@ -13,6 +14,7 @@ project)! Now you are ready to clone the github repository (9) containing this p
 
 
 Running the code:
+
 Before attempting to run any code make sure that you are connected to a
 SpiNNaker machine. The code as well as most tests are going to fail if you are not. The training.py
 file contains everything you need to get an overview of how to train the network. You should do
@@ -36,4 +38,5 @@ the size of the input layer.
 
 
 MATLAB CODE
+
 The Simulink Animation compatible with MATLAB R2016a can be found in the Ball Simulation Folder.
