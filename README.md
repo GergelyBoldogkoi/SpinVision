@@ -2,8 +2,7 @@ SPIN VISION
 
 Installation:
 
-This section is going to give a short explanation of how to use the code and
-how to install the required software. First of all you are going to need to download jAER, the
+In order to run the project, first of all, you are going to need to download jAER, the
 software from inilabs that allows your computer to communicate with the DVS camera and to
 make recordings. Instructions can be found on the inilabs website (5) . Then install python 2.7 on
 your computer, although the code should be compatible with Python 3 as well. Before installing
