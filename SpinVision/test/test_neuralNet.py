@@ -5,8 +5,9 @@ import matplotlib.pyplot as plt
 import SpinVision.AEDAT_Handler as f
 from os import listdir
 import paer
+import SpinVision.training as tr
 
-basePath = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/test/"
+basePath = tr.filepath + "resources/DVS Recordings/test/"
 
 
 class neuralNetTests(unittest.TestCase):
@@ -58,12 +59,12 @@ class neuralNetTests(unittest.TestCase):
 
     def test_canAddInputLayer(self):
         Network = n.NeuralNet()
-        layerId = Network.addInputLayer(2, [[0, 1], [0, 3]], 5)
+        layerId = Network.addInputLayer(2, [[0, 1], [0, 3]])
 
         assert 0 == layerId
         assert 1 == len(Network.layers)
         assert p.SpikeSourceArray == Network.layers[0].nType
-        self.assertEquals(7 , len(Network.layers[0].nParams.get('spike_times')))
+        self.assertEquals(2 , len(Network.layers[0].nParams.get('spike_times')))
 
     def test_canConnectLayers(self):
         Network = n.NeuralNet()
@@ -113,7 +114,7 @@ class neuralNetTests(unittest.TestCase):
     def test_canReadSpikes(self):
         Network = n.NeuralNet()
 
-        filename = "/home/kavits/Project/SpinVision/SpinVision/resources/" \
+        filename = tr.filepath + "resources/" \
                    "DVS Recordings/test/testTruncated"
         aedata = f.readData(filename)
         ahham = n.readSpikes([aedata])
@@ -126,7 +127,7 @@ class neuralNetTests(unittest.TestCase):
         nrSpikesInFile = len(f.extractData(f.readData(filename))['ts'])
 
         self.assertEquals(nrSpikesInFile, nrSpikes)
-        print len(spikeTimes)
+        # print len(spikeTimes)
         self.assertEquals(664, len(spikeTimes))
 
         lastSpikeInFile = (aedata.ts[len(aedata.ts) - 1] - aedata.ts[0]) / 1000
@@ -145,7 +146,7 @@ class neuralNetTests(unittest.TestCase):
 
     def test_canGetTrainingDataFromDirectories(self):
         Network = n.NeuralNet()
-        path = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/test/appendTest"
+        path = tr.filepath + "resources/DVS Recordings/test/appendTest"
 
         tbs = 1000
         data = n.getTrainingDataFromDirectories([path], filter="test", timeBetweenSamples=tbs, startFrom_ms=0)[
@@ -155,7 +156,7 @@ class neuralNetTests(unittest.TestCase):
 
         nrSpikesControl = 0
         for file in listdir(path):
-            print file
+            # print file
             if "notTobeIncludedInAppend.aedat" == file:  # make sure filtering works
                 print "ignoring incorrect file"
                 continue
@@ -218,7 +219,7 @@ class neuralNetTests(unittest.TestCase):
 
     def test_canGetTrainingData(self):
         Network = n.NeuralNet()
-        path = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/test/"
+        path = tr.filepath + "resources/DVS Recordings/test/"
 
         files = []
         files.append(path + "testSampleLeft")
@@ -226,7 +227,7 @@ class neuralNetTests(unittest.TestCase):
 
         returned = n.getTrainingData(16384, [files[0], files[1]], 2, 100)
         self.assertEquals(16384, len(returned['spikeTimes']))
-        print returned['sampleTimes']
+        # print returned['sampleTimes']
         # The tests here would really be the same as for readSpikes
 
         # spikeTimes=[]
@@ -238,7 +239,7 @@ class neuralNetTests(unittest.TestCase):
 
     def test_canSetupForInitialTraining(self):
         Network = n.NeuralNet()
-        path = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/test/"
+        path =tr.filepath + "resources/DVS Recordings/test/"
 
         files = []
         files.append(path + "testSampleLeft")
@@ -249,7 +250,7 @@ class neuralNetTests(unittest.TestCase):
 
     def test_canSetupWithWeights(self):
         with n.NeuralNet() as net:
-            path = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/test/"
+            path = tr.filepath + "resources/DVS Recordings/test/"
 
             files = []
             files.append(path + "testSampleLeft")
@@ -269,7 +270,7 @@ class neuralNetTests(unittest.TestCase):
 
     def test_canSetupEvaluation(self):
         with n.NeuralNet() as net:
-            path = "/home/kavits/Project/SpinVision/SpinVision/resources/DVS Recordings/test/"
+            path = tr.filepath + "resources/DVS Recordings/test/"
 
             files = []
             files.append(path + "testSampleLeft")
@@ -282,12 +283,5 @@ class neuralNetTests(unittest.TestCase):
             self.assertEquals(files[0], net.annotations[0], "annotations set in correct order")
             self.assertEquals(files[1], net.annotations[1], "annotations set in correct order")
 
-            # net.run(1)
-            #
-            # conWeights = net.connections[0].proj.getWeights(format='array')
-            #
-            #
-            #
-            # self.assertEquals(conWeights, weights) #Todo weights work correctly, but different type numbers are returned, find a way to compare them
 
 

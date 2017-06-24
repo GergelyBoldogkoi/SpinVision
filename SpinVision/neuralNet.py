@@ -380,7 +380,7 @@ def getTrainingData(inputlayerSize, sourceFiles, iterations, timebetweenSamples,
             aedata.append(f.readData(file))
     # aedata2 = f.readData(sourceFile2)
     #
-    # if randomise: # todo make a list of inputs be handleable
+    # if randomise:
     #     ordering = orderRandomly(aedata1, aedata2, iterations)
     # else:
     #     ordering = []
@@ -410,7 +410,7 @@ def getTrainingData(inputlayerSize, sourceFiles, iterations, timebetweenSamples,
                                             # starts numbering the coordinates from 1
 
         if index > len(spikeTimes):
-            print "ERROR ignoring input"    # Interesting thing: SOMETIMES neuron with x=128 gets passed in todo investigate
+            print "ERROR ignoring input"    # Interesting thing: SOMETIMES neuron with x=128 gets passed in
                                             # about 5 spikes, so should be fine
             print "x " + str(x)
             print "y " + str(y)
@@ -512,7 +512,6 @@ def randomiseDelays(distr, connections, mean=0.5, std=0.15, wMax=1, wMin=0):
 
 
 def orderRandomly(aedata1, aedata2, iterations):
-    # TODO extend to handle a list of inputs
     # randomize order
     ordering = [0] * 2 * iterations
     counter1 = 0
@@ -535,12 +534,3 @@ def orderRandomly(aedata1, aedata2, iterations):
 
 
 
-
-    # def evaluate(sources, weights, delays=1):
-    #     #todo input layer chold have fixed size
-    #     #TODO test, write functions to save/load weights, figure out how to release spinnaker board
-    #     with NeuralNet() as net:
-    #         results = net.setUpEvaluation(weights, sources[0], sources[2], delays)
-    #         runTime = results['runTime']
-    #         net.run(runTime)
-    #         net.plotSpikes(results['outputLayer'])

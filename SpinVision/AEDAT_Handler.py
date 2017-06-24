@@ -16,7 +16,7 @@ def read(filename):
 
 def readData(filename):
     sourceFile = filename + ".aedat"
-    print sourceFile
+    # print sourceFile
     aer = paer.aefile(sourceFile)
     data = paer.aedata(aer)
     # print data.x
@@ -54,7 +54,7 @@ def downsample(sourceFile, destFile, scale):
     # sampled.save_to_mat(destPath + '.mat') #This file can be read by the application to extract spiketimes!
 
 def modeDownsample(sourceFile, destFile, scale=4, exposureTime_ms=EXPOSURE_TIME):
-    #Todo test
+
     sourcePath = sourceFile + ".aedat"
     lib = paer.aefile(sourcePath)
     data = paer.aedata(lib)
@@ -62,10 +62,9 @@ def modeDownsample(sourceFile, destFile, scale=4, exposureTime_ms=EXPOSURE_TIME)
 
     lib.save(newData, destFile + '.aedat', 'aedat')
 
-
+##DEPRECATED
 def filterMode(data, scale, exposureTime_ms=50):
-    #TODO fix by continous mode calcultion
-    print "data.x: " + str(data.x)
+    # print "data.x: " + str(data.x)
     print type(data.x)
     newDim = (int(128 / scale), int(128 / scale))
 
@@ -73,7 +72,7 @@ def filterMode(data, scale, exposureTime_ms=50):
     assert data.dimensions[1] % newDim[1] is 0
 
     dataByTs = {}
-    for i in range(len(data.ts)):  # TODO make faster, could be made faster by reducing time resolution
+    for i in range(len(data.ts)):
         # group data by timestamp in order to create "frames"
         key = int(data.ts[i] / (1000 * exposureTime_ms))
         if key not in dataByTs:
@@ -91,7 +90,7 @@ def filterMode(data, scale, exposureTime_ms=50):
     # now iterate though frames
     loopcounter = 0
     for ts in dataByTs:
-        print "ts"
+        # print "ts"
         print ts
         spikes = dataByTs[ts]
 
@@ -144,7 +143,7 @@ def filterMode(data, scale, exposureTime_ms=50):
 
 def filterNoise(data, windowSize=2, threshold=4, exposureTime_ms=20):
     # type: (paer.aedata, int) -> paer.aedata
-    #this function converts all events into ON events #TODO produce OFF as well
+    #this function converts all events into ON events
 
     newTs = []
     newX = []
@@ -251,14 +250,14 @@ def truncate(sourcePath, from_us, to_us, destPath):
                 includeFrom = i
                 includeIsSet = True
 
-
-        print "ts " + str(ts)
-        print "to_us " + str(to_us)
-        print "ts-toUs " + str(ts-to_us)
-        print "ts > to_us " + str(ts > to_us)
-
-        print "prevTs " + str(prevTs)
-        print "prevTs <= to_us " + str(prevTs <= to_us)
+        #
+        # print "ts " + str(ts)
+        # print "to_us " + str(to_us)
+        # print "ts-toUs " + str(ts-to_us)
+        # print "ts > to_us " + str(ts > to_us)
+        #
+        # print "prevTs " + str(prevTs)
+        # print "prevTs <= to_us " + str(prevTs <= to_us)
         if ts >= to_us and prevTs <= to_us:  # includes events at fromMs and toMs
             stopAt = i
             break

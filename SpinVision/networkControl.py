@@ -14,13 +14,13 @@ import plotly.graph_objs as go
 TIME_BETWEEN_ITERATIONS = 500
 ITERATIONS = 5
 RUNTIME_CONSTANT = 1
-MAX_ITERATIONS_FOR_TRAINING_RUN = 25  # Todo tune this number
-WMAX = 0.125  # n.__STDPParameters__['wMax']
+MAX_ITERATIONS_FOR_TRAINING_RUN = 25
+WMAX = 0.15  # n.__STDPParameters__['wMax']
 WMIN = n.__STDPParameters__['wMin']
 MEAN = n.__STDPParameters__['mean']
 STD = n.__STDPParameters__['std']
 
-CONNSTRENGTH_TRAJ_POS = 15
+CONNSTRENGTH_TRAJ_POS = 17.5
 INHIBITORY_WEIGHTS = 200
 
 
@@ -65,7 +65,7 @@ def evaluateEndPositions(nrInputNeurons, sources, inputWeights, trainedNetwork):
 
     connections = n.createConnectionsFromWeights(inputWeights)
 
-    #as the trajectory layer is added first to network its number is 0 #TODO get rid of this magic number
+    #as the trajectory layer is added first to network its number is 0
     input_trajConnection = trainedNetwork.connect(inputLayer, 0, p.FromListConnector(connections))
 
     runTime = int(lastSpike + 100) / RUNTIME_CONSTANT
@@ -81,8 +81,8 @@ def evaluateEndPositions(nrInputNeurons, sources, inputWeights, trainedNetwork):
 
     p.end() #disconnect from SpiNNaker
 
-    plotPrettySpikes( trajSpikes, markersize=4)
-    plotPrettySpikes( spikes, markersize=8)
+    plotPrettySpikes( trajSpikes, markersize=6)
+    plotPrettySpikes( spikes, markersize=10)
 
     return spikes
 
@@ -176,11 +176,11 @@ def train_Trajectories(inputSize, outputSize, iterations, sources, weightSource=
 
 
         # if i == len(weightList) -1:
-        print "displaying info with i, previ: " + str(i) + ', ' + str(prevIndex)
-        print "len untrained Weights: " + str(len(untrainedWeights))
-        print "len trained Weights: " + str(len(weightList[i]))
+        # print "displaying info with i, previ: " + str(i) + ', ' + str(prevIndex)
+        # print "len untrained Weights: " + str(len(untrainedWeights))
+        # print "len trained Weights: " + str(len(weightList[i]))
         # if i == len(weightList) -1: #only plot the last bit
-        #     displayInfo(plot, [sources[i]], untrainedWeights, weightList[i], weightList[prevIndex])
+        # displayInfo(plot, [sources[i]], untrainedWeights, weightList[i], weightList[prevIndex])
 
 
     if save:
@@ -233,7 +233,7 @@ def train_TrajectoriesFromFile(inputLayerSize, outputLayerSize, iterations, time
     out = networkData['outputLayer']
     if plot:
         net.plotSpikes(out, block=True)
-    net.__exit__()
+    p.end()
 
     return {'outPutLayer': out,
             'trainedWeights': weights}
@@ -378,7 +378,7 @@ def plot2DWeightsOrdered(untrainedWeights, trainedWeights, block=True):
     for weight in untrainedWeights:
         assert weight >= 0
         if weight > 100:
-            weight = 100  # TODO do something with this
+            weight = 100
         assert weight <= 100
 
         untrainedBuckets[weight] += 1
@@ -389,7 +389,7 @@ def plot2DWeightsOrdered(untrainedWeights, trainedWeights, block=True):
     for weight in trainedWeights:
         assert weight >= 0
         if weight > 100:
-            weight = 100  # TODO do something with this
+            weight = 100
         assert weight <= 100
         trainedBuckets[weight] += 1
 
